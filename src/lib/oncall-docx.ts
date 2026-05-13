@@ -119,7 +119,7 @@ export async function exportPaymentDocx(results: OnCallResult[]): Promise<void> 
           }),
           new Table({
             width: { size: TABLE_W, type: WidthType.DXA },
-            columnWidths: [COL_NAME, COL_CC, COL_AMT],
+            columnWidths: [COL_NAME, COL_AMT],
             rows: [headerRow, ...dataRows, totalRow],
           }),
           new Paragraph({ spacing: { before: 720 }, children: [new TextRun("")] }),
