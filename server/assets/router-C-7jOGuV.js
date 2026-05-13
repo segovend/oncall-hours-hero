@@ -1,4 +1,4 @@
-import { r as reactExports, f as functionalUpdate$1, a as arraysEqual, c as createLRUCache, i as isPromise, b as isRedirect, d as isNotFound, e as invariant, g as createControlledPromise, h as rootRouteId, j as isServer$1, k as compileDecodeCharMap, t as trimPath, l as rewriteBasepath, m as composeRewrites, p as processRouteTree, n as processRouteMasks, o as resolvePath, q as cleanPath, s as trimPathRight, u as parseHref, v as executeRewriteInput, w as isDangerousProtocol, x as redirect, y as findSingleMatch, z as deepEqual, D as DEFAULT_PROTOCOL_ALLOWLIST, A as interpolatePath, B as nullReplaceEqualDeep, C as replaceEqualDeep$1, E as last, F as decodePath, G as findFlatMatch, H as findRouteMatch, I as executeRewriteOutput, J as encodePathLikeUrl, K as trimPathLeft, L as joinPaths, M as useRouter, N as dummyMatchContext, O as matchContext, P as requireReactDom, Q as exactPathTest, R as removeTrailingSlash, S as React, T as jsxRuntimeExports, U as isModuleNotFoundError, V as useHydrated, W as escapeHtml, X as isInlinableStylesheet, Y as getAssetCrossOrigin, Z as resolveManifestAssetLink, _ as Outlet } from "./server-CgWOZ-xa.js";
+import { r as reactExports, f as functionalUpdate$1, a as arraysEqual, c as createLRUCache, i as isPromise, b as isRedirect, d as isNotFound, e as invariant, g as createControlledPromise, h as rootRouteId, j as isServer$1, k as compileDecodeCharMap, t as trimPath, l as rewriteBasepath, m as composeRewrites, p as processRouteTree, n as processRouteMasks, o as resolvePath, q as cleanPath, s as trimPathRight, u as parseHref, v as executeRewriteInput, w as isDangerousProtocol, x as redirect, y as findSingleMatch, z as deepEqual, D as DEFAULT_PROTOCOL_ALLOWLIST, A as interpolatePath, B as nullReplaceEqualDeep, C as replaceEqualDeep$1, E as last, F as decodePath, G as findFlatMatch, H as findRouteMatch, I as executeRewriteOutput, J as encodePathLikeUrl, K as trimPathLeft, L as joinPaths, M as useRouter, N as dummyMatchContext, O as matchContext, P as requireReactDom, Q as exactPathTest, R as removeTrailingSlash, S as React, T as jsxRuntimeExports, U as isModuleNotFoundError, V as useHydrated, W as escapeHtml, X as isInlinableStylesheet, Y as getAssetCrossOrigin, Z as resolveManifestAssetLink, _ as Outlet } from "./server-CNzfh8eg.js";
 import "node:async_hooks";
 import "node:stream/web";
 import "node:stream";
@@ -4691,14 +4691,14 @@ const Route$2 = createRootRouteWithContext()({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "On-Call Calculator" },
+      { name: "description", content: "On-call hours and payment calculator" },
+      { name: "author", content: "segovend" },
+      { property: "og:title", content: "On-Call Calculator" },
+      { property: "og:description", content: "On-call hours and payment calculator" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" }
+      { name: "twitter:site", content: "" }
     ],
     links: [
       {
@@ -4725,7 +4725,7 @@ function RootComponent() {
   const { queryClient } = Route$2.useRouteContext();
   return /* @__PURE__ */ jsxRuntimeExports.jsx(QueryClientProvider, { client: queryClient, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Outlet, {}) });
 }
-const $$splitComponentImporter$1 = () => import("./hours-D53E8rtE.js");
+const $$splitComponentImporter$1 = () => import("./hours-50fbKAYI.js");
 const Route$1 = createFileRoute("/hours")({
   component: lazyRouteComponent($$splitComponentImporter$1, "component"),
   head: () => ({
@@ -4737,7 +4737,7 @@ const Route$1 = createFileRoute("/hours")({
     }]
   })
 });
-const $$splitComponentImporter = () => import("./index-7saUjsbU.js");
+const $$splitComponentImporter = () => import("./index-vgrY-eek.js");
 const Route2 = createFileRoute("/")({
   head: () => ({
     meta: [{
