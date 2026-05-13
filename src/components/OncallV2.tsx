@@ -14,13 +14,13 @@ import { exportPaymentDocx } from "@/lib/oncall-docx";
 
 function uid() { return crypto.randomUUID(); }
 
-function newEntry(cc = "", person = ""): OnCallEntry {
+function newEntry(person = ""): OnCallEntry {
   return {
     id: uid(),
     person,
     fromDate: "",
     toDate: "",
-    costCenter: cc,
+    costCenter: "",
     monthlyGrossSalary: 0,
   };
 }
