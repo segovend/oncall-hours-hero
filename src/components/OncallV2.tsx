@@ -302,7 +302,7 @@ function Row({ r, update, remove, setManualHours, resetHours, toggleFlag, toggle
         <Input
           type="number"
           min={0}
-          value={r.monthlyGrossSalary}
+          value={r.monthlyGrossSalary || ""}
           onChange={(e) => update(r.id, { monthlyGrossSalary: parseFloat(e.target.value) || 0 })}
           className={cn(
             "h-9 w-full text-right font-mono",
