@@ -63,7 +63,7 @@ export function calculateHours(fromDate: string, toDate: string): number {
   return h;
 }
 
-export function compute(entry: OnCallEntry): OnCallResult {
+export function compute(entry: OnCallEntry, monthlyHours: number = STANDARD_MONTHLY_HOURS): OnCallResult {
   const errors: string[] = [];
   const s = entry.fromDate ? new Date(entry.fromDate + "T00:00:00") : null;
   const e = entry.toDate ? new Date(entry.toDate + "T00:00:00") : null;
