@@ -63,7 +63,7 @@ export function calculateHours(fromDate: string, toDate: string): number {
   return h;
 }
 
-export function compute(entry: OnCallEntry): OnCallResult {
+export function compute(entry: OnCallEntry, monthlyHours: number = STANDARD_MONTHLY_HOURS): OnCallResult {
   const errors: string[] = [];
   const s = entry.fromDate ? new Date(entry.fromDate + "T00:00:00") : null;
   const e = entry.toDate ? new Date(entry.toDate + "T00:00:00") : null;
@@ -88,7 +88,8 @@ export function compute(entry: OnCallEntry): OnCallResult {
   const calculatedHours = manualMode ? 0 : calculateHours(entry.fromDate, entry.toDate);
   const effectiveHours =
     entry.manualHoursOverride !== undefined ? entry.manualHoursOverride : calculatedHours;
-  const hourRate = entry.monthlyGrossSalary / STANDARD_MONTHLY_HOURS;
+  const divisor = monthlyHours > 0 ? monthlyHours : STANDARD_MONTHLY_HOURS;
+  const hourRate = entry.monthlyGrossSalary / divisor;
   const tenPercent = hourRate * 0.1;
   const payment = Math.ceil(effectiveHours * tenPercent);
 
