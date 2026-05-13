@@ -129,54 +129,27 @@ export function OncallV2() {
   const toggleFlag = (id: string) =>
     setEntries((es) => es.map((e) => (e.id === id ? { ...e, isFlagged: !e.isFlagged } : e)));
 
-  const groups = useMemo(() => {
-    const map = new Map<string, OnCallResult[]>();
-    for (const r of results) {
-      const key = r.costCenter || "—";
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(r);
-    }
-    return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
-  }, [results]);
-
-  const grand = results.reduce(
-    (a, r) => ({ hours: a.hours + r.effectiveHours, payment: a.payment + r.payment }),
-    { hours: 0, payment: 0 },
-  );
-
+  const grandHours = results.reduce((a, r) => a + r.effectiveHours, 0);
+  const ccCount = new Set(entries.map((e) => e.costCenter.trim()).filter(Boolean)).size;
   const hasMismatch = results.some((r) => r.hasHoursMismatch);
   const hasFlagged = results.some((r) => r.isFlagged);
   const peopleCount = new Set(entries.map((e) => e.person.trim()).filter(Boolean)).size;
 
   const exportXlsx = () => {
     const wb = XLSX.utils.book_new();
-    for (const [cc, rows] of groups) {
-      const aoa: (string | number)[][] = [
-        ["Person", "Mode", "From", "To", "Hours", "CC", "Salary", "Hour rate", "10%", "Payment"],
-      ];
-      let subH = 0, subP = 0;
-      for (const r of rows) {
-        aoa.push([
-          r.person, r.manualMode ? "Manual" : "Auto",
-          isoToDisplay(r.fromDate), isoToDisplay(r.toDate),
-          r.effectiveHours, r.costCenter, r.monthlyGrossSalary,
-          r.hourRate, r.tenPercent, r.payment,
-        ]);
-        subH += r.effectiveHours; subP += r.payment;
-      }
-      aoa.push(["", "", "", "", subH, "Subtotal", "", "", "", subP]);
-      const ws = XLSX.utils.aoa_to_sheet(aoa);
-      XLSX.utils.book_append_sheet(wb, ws, cc.slice(0, 31));
+    const aoa: (string | number)[][] = [
+      ["Person", "Mode", "From", "To", "Hours", "CC", "Salary", "Hour rate", "10%", "Payment"],
+    ];
+    for (const r of results) {
+      aoa.push([
+        r.person, r.manualMode ? "Manual" : "Auto",
+        isoToDisplay(r.fromDate), isoToDisplay(r.toDate),
+        r.effectiveHours, r.costCenter, r.monthlyGrossSalary,
+        r.hourRate, r.tenPercent, r.payment,
+      ]);
     }
-    const sumAoa: (string | number)[][] = [["Cost Center", "Hours", "Payment"]];
-    let gH = 0, gP = 0;
-    for (const [cc, rows] of groups) {
-      const h = rows.reduce((a, r) => a + r.effectiveHours, 0);
-      const p = rows.reduce((a, r) => a + r.payment, 0);
-      sumAoa.push([cc, h, p]); gH += h; gP += p;
-    }
-    sumAoa.push(["GRAND TOTAL", gH, gP]);
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sumAoa), "Summary");
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    XLSX.utils.book_append_sheet(wb, ws, "On-call");
     XLSX.writeFile(wb, "oncall.xlsx");
   };
 
@@ -227,11 +200,10 @@ export function OncallV2() {
       </header>
 
       {/* KPI strip */}
-      <div className="relative mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="relative mb-6 grid grid-cols-3 gap-3">
         <Stat icon={<Users className="h-4 w-4" />} label="People" value={String(peopleCount)} />
-        <Stat icon={<Clock className="h-4 w-4" />} label="Total hours" value={`${grand.hours} h`} />
-        <Stat icon={<Wallet className="h-4 w-4" />} label="Total payment" value={`€ ${fmtInt(grand.payment)}`} accent />
-        <Stat icon={<Flag className="h-4 w-4" />} label="Cost centers" value={String(groups.length)} />
+        <Stat icon={<Clock className="h-4 w-4" />} label="Total hours" value={`${grandHours} h`} accent />
+        <Stat icon={<Flag className="h-4 w-4" />} label="Cost centers" value={String(ccCount)} />
       </div>
 
       {(hasMismatch || hasFlagged) && (
@@ -243,7 +215,7 @@ export function OncallV2() {
         </div>
       )}
 
-      <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-card/60 shadow-[var(--shadow-soft)] backdrop-blur-xl">
+      <div className="relative overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-soft)] backdrop-blur-xl">
         <div className="overflow-x-auto">
           <table className="w-full table-fixed border-collapse text-sm">
             <colgroup>
@@ -259,8 +231,8 @@ export function OncallV2() {
               <col className={COLS.payment} />
               <col className={COLS.actions} />
             </colgroup>
-            <thead className="bg-white/[0.03] text-[10px] uppercase tracking-[0.12em] text-muted-foreground/80">
-              <tr className="border-b border-white/10">
+            <thead className="bg-secondary/60 text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+              <tr className="border-b border-border">
                 <Th>Person</Th>
                 <Th>Mode</Th>
                 <Th>From</Th>
@@ -275,34 +247,18 @@ export function OncallV2() {
               </tr>
             </thead>
             <tbody>
-              {groups.map(([cc, rows]) => {
-                const subH = rows.reduce((a, r) => a + r.effectiveHours, 0);
-                const subP = rows.reduce((a, r) => a + r.payment, 0);
-                return (
-                  <RenderGroup
-                    key={cc}
-                    cc={cc}
-                    rows={rows}
-                    subH={subH}
-                    subP={subP}
-                    update={update}
-                    remove={remove}
-                    setManualHours={setManualHours}
-                    resetHours={resetHours}
-                    toggleFlag={toggleFlag}
-                    toggleManualMode={toggleManualMode}
-                  />
-                );
-              })}
-              <tr className="border-t-2 border-white/15 bg-[image:var(--gradient-accent)]/10">
-                <td className="px-4 py-4 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground" colSpan={4}>
-                  Grand total
-                </td>
-                <td className="px-3 py-4 text-right font-mono text-base font-semibold">{grand.hours}</td>
-                <td colSpan={4} />
-                <td className="px-3 py-4 text-right font-mono text-base font-semibold text-primary">€ {fmtInt(grand.payment)}</td>
-                <td />
-              </tr>
+              {results.map((r) => (
+                <Row
+                  key={r.id}
+                  r={r}
+                  update={update}
+                  remove={remove}
+                  setManualHours={setManualHours}
+                  resetHours={resetHours}
+                  toggleFlag={toggleFlag}
+                  toggleManualMode={toggleManualMode}
+                />
+              ))}
             </tbody>
           </table>
         </div>
@@ -339,11 +295,8 @@ function Td({ children, className, align }: { children?: React.ReactNode; classN
   );
 }
 
-interface GroupProps {
-  cc: string;
-  rows: OnCallResult[];
-  subH: number;
-  subP: number;
+interface RowProps {
+  r: OnCallResult;
   update: (id: string, p: Partial<OnCallEntry>) => void;
   remove: (id: string) => void;
   setManualHours: (id: string, v: string) => void;
@@ -351,125 +304,104 @@ interface GroupProps {
   toggleFlag: (id: string) => void;
   toggleManualMode: (id: string) => void;
 }
-function RenderGroup({ cc, rows, subH, subP, update, remove, setManualHours, resetHours, toggleFlag, toggleManualMode }: GroupProps) {
+function Row({ r, update, remove, setManualHours, resetHours, toggleFlag, toggleManualMode }: RowProps) {
   return (
-    <>
-      <tr className="bg-white/[0.04]">
-        <td colSpan={11} className="px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-          <span className="mr-2 inline-block h-1.5 w-1.5 rounded-full bg-primary" />
-          {cc} <span className="ml-1 opacity-60">· {rows.length}</span>
-        </td>
-      </tr>
-      {rows.map((r) => (
-        <tr key={r.id} className="border-b border-white/5 transition-colors hover:bg-white/[0.03]">
-          <Td>
-            <Input
-              value={r.person}
-              onChange={(e) => update(r.id, { person: e.target.value })}
-              placeholder="Full name"
-              className="h-9 w-full border-white/10 bg-white/5 placeholder:text-muted-foreground/50 focus-visible:ring-1 focus-visible:ring-primary/60"
-            />
-          </Td>
-          <Td>
-            <ModeToggle manual={r.manualMode} onToggle={() => toggleManualMode(r.id)} />
-          </Td>
-          <Td>
-            <DateCell iso={r.fromDate} onChange={(v) => update(r.id, { fromDate: v })} disabled={r.manualMode} />
-          </Td>
-          <Td>
-            <DateCell iso={r.toDate} onChange={(v) => update(r.id, { toDate: v })} disabled={r.manualMode} />
-          </Td>
-          <Td align="right">
-            <Input
-              type="number"
-              min={0}
-              value={r.effectiveHours}
-              onChange={(e) => setManualHours(r.id, e.target.value)}
-              readOnly={!r.manualMode && !r.hasHoursMismatch ? false : false}
-              className={cn(
-                "h-9 w-full border-white/10 bg-white/5 text-right font-mono",
-                r.manualMode && "border-primary/40 bg-primary/10",
-                r.hasHoursMismatch && "border-destructive/50 bg-destructive/10 text-destructive font-semibold",
-              )}
-              title={
-                r.manualMode ? "Manual mode — enter hours directly" :
-                r.hasHoursMismatch ? `Calculated: ${r.calculatedHours}h` : undefined
-              }
-            />
-          </Td>
-          <Td>
-            <Input
-              value={r.costCenter}
-              onChange={(e) => update(r.id, { costCenter: e.target.value })}
-              placeholder="00XXX"
-              className="h-9 w-full border-white/10 bg-white/5 font-mono"
-            />
-          </Td>
-          <Td align="right">
-            <Input
-              type="number"
-              min={0}
-              value={r.monthlyGrossSalary}
-              onChange={(e) => update(r.id, { monthlyGrossSalary: parseFloat(e.target.value) || 0 })}
-              placeholder=""
-              className={cn(
-                "h-9 w-full border-white/10 bg-white/5 text-right font-mono",
-                r.isFlagged && "border-[var(--color-flag)]/60 bg-[var(--color-flag)]/15",
-              )}
-            />
-          </Td>
-          <Td align="right" className="font-mono text-xs text-muted-foreground">{fmtMoney(r.hourRate)}</Td>
-          <Td align="right" className="font-mono text-xs text-muted-foreground">{fmtMoney(r.tenPercent)}</Td>
-          <Td
-            align="right"
-            className={cn(
-              "font-mono font-semibold tabular-nums",
-              r.isFlagged && "rounded-md bg-[var(--color-flag)]/20 text-[var(--color-flag)]",
-            )}
+    <tr className="border-b border-border/60 transition-colors hover:bg-secondary/40">
+      <Td>
+        <Input
+          value={r.person}
+          onChange={(e) => update(r.id, { person: e.target.value })}
+          placeholder="Full name"
+          className="h-9 w-full focus-visible:ring-1 focus-visible:ring-primary/60"
+        />
+      </Td>
+      <Td>
+        <ModeToggle manual={r.manualMode} onToggle={() => toggleManualMode(r.id)} />
+      </Td>
+      <Td>
+        <DateCell iso={r.fromDate} onChange={(v) => update(r.id, { fromDate: v })} disabled={r.manualMode} />
+      </Td>
+      <Td>
+        <DateCell iso={r.toDate} onChange={(v) => update(r.id, { toDate: v })} disabled={r.manualMode} />
+      </Td>
+      <Td align="right">
+        <Input
+          type="number"
+          min={0}
+          value={r.effectiveHours}
+          onChange={(e) => setManualHours(r.id, e.target.value)}
+          className={cn(
+            "h-9 w-full text-right font-mono",
+            r.manualMode && "border-primary/40 bg-primary/10",
+            r.hasHoursMismatch && "border-destructive/50 bg-destructive/10 text-destructive font-semibold",
+          )}
+          title={
+            r.manualMode ? "Manual mode — enter hours directly" :
+            r.hasHoursMismatch ? `Calculated: ${r.calculatedHours}h` : undefined
+          }
+        />
+      </Td>
+      <Td>
+        <Input
+          value={r.costCenter}
+          onChange={(e) => update(r.id, { costCenter: e.target.value })}
+          placeholder="00XXX"
+          className="h-9 w-full font-mono"
+        />
+      </Td>
+      <Td align="right">
+        <Input
+          type="number"
+          min={0}
+          value={r.monthlyGrossSalary}
+          onChange={(e) => update(r.id, { monthlyGrossSalary: parseFloat(e.target.value) || 0 })}
+          className={cn(
+            "h-9 w-full text-right font-mono",
+            r.isFlagged && "border-[var(--color-flag)]/60 bg-[var(--color-flag)]/15",
+          )}
+        />
+      </Td>
+      <Td align="right" className="font-mono text-xs text-muted-foreground">{fmtMoney(r.hourRate)}</Td>
+      <Td align="right" className="font-mono text-xs text-muted-foreground">{fmtMoney(r.tenPercent)}</Td>
+      <Td
+        align="right"
+        className={cn(
+          "font-mono font-semibold tabular-nums",
+          r.isFlagged && "rounded-md bg-[var(--color-flag)]/20 text-[var(--color-flag)]",
+        )}
+      >
+        € {fmtInt(r.payment)}
+      </Td>
+      <Td>
+        <div className="flex items-center justify-end gap-0.5">
+          {r.hasHoursMismatch && (
+            <Button
+              variant="ghost" size="icon" className="h-8 w-8"
+              onClick={() => resetHours(r.id)}
+              aria-label="Reset hours"
+              title={`Reset to ${r.calculatedHours}h`}
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+            </Button>
+          )}
+          <Button
+            variant="ghost" size="icon"
+            className={cn("h-8 w-8", r.isFlagged && "text-[var(--color-flag)]")}
+            onClick={() => toggleFlag(r.id)}
+            aria-label="Flag for review"
           >
-            € {fmtInt(r.payment)}
-          </Td>
-          <Td>
-            <div className="flex items-center justify-end gap-0.5">
-              {r.hasHoursMismatch && (
-                <Button
-                  variant="ghost" size="icon" className="h-8 w-8 hover:bg-white/10"
-                  onClick={() => resetHours(r.id)}
-                  aria-label="Reset hours"
-                  title={`Reset to ${r.calculatedHours}h`}
-                >
-                  <RotateCcw className="h-3.5 w-3.5" />
-                </Button>
-              )}
-              <Button
-                variant="ghost" size="icon"
-                className={cn("h-8 w-8 hover:bg-white/10", r.isFlagged && "text-[var(--color-flag)]")}
-                onClick={() => toggleFlag(r.id)}
-                aria-label="Flag for review"
-              >
-                <Flag className={cn("h-4 w-4", r.isFlagged && "fill-current")} />
-              </Button>
-              <Button
-                variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                onClick={() => remove(r.id)}
-                aria-label="Delete row"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </Td>
-        </tr>
-      ))}
-      <tr className="border-b border-white/10 bg-white/[0.02]">
-        <td colSpan={4} className="px-4 py-2 text-right text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-          Subtotal
-        </td>
-        <td className="px-3 py-2 text-right font-mono font-semibold">{subH}</td>
-        <td colSpan={4} />
-        <td className="px-3 py-2 text-right font-mono font-semibold">€ {fmtInt(subP)}</td>
-        <td />
-      </tr>
-    </>
+            <Flag className={cn("h-4 w-4", r.isFlagged && "fill-current")} />
+          </Button>
+          <Button
+            variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+            onClick={() => remove(r.id)}
+            aria-label="Delete row"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </Td>
+    </tr>
   );
 }
 
