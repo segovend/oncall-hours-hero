@@ -137,33 +137,19 @@ export function OncallV2() {
 
   const exportXlsx = () => {
     const wb = XLSX.utils.book_new();
-    for (const [cc, rows] of groups) {
-      const aoa: (string | number)[][] = [
-        ["Person", "Mode", "From", "To", "Hours", "CC", "Salary", "Hour rate", "10%", "Payment"],
-      ];
-      let subH = 0, subP = 0;
-      for (const r of rows) {
-        aoa.push([
-          r.person, r.manualMode ? "Manual" : "Auto",
-          isoToDisplay(r.fromDate), isoToDisplay(r.toDate),
-          r.effectiveHours, r.costCenter, r.monthlyGrossSalary,
-          r.hourRate, r.tenPercent, r.payment,
-        ]);
-        subH += r.effectiveHours; subP += r.payment;
-      }
-      aoa.push(["", "", "", "", subH, "Subtotal", "", "", "", subP]);
-      const ws = XLSX.utils.aoa_to_sheet(aoa);
-      XLSX.utils.book_append_sheet(wb, ws, cc.slice(0, 31));
+    const aoa: (string | number)[][] = [
+      ["Person", "Mode", "From", "To", "Hours", "CC", "Salary", "Hour rate", "10%", "Payment"],
+    ];
+    for (const r of results) {
+      aoa.push([
+        r.person, r.manualMode ? "Manual" : "Auto",
+        isoToDisplay(r.fromDate), isoToDisplay(r.toDate),
+        r.effectiveHours, r.costCenter, r.monthlyGrossSalary,
+        r.hourRate, r.tenPercent, r.payment,
+      ]);
     }
-    const sumAoa: (string | number)[][] = [["Cost Center", "Hours", "Payment"]];
-    let gH = 0, gP = 0;
-    for (const [cc, rows] of groups) {
-      const h = rows.reduce((a, r) => a + r.effectiveHours, 0);
-      const p = rows.reduce((a, r) => a + r.payment, 0);
-      sumAoa.push([cc, h, p]); gH += h; gP += p;
-    }
-    sumAoa.push(["GRAND TOTAL", gH, gP]);
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sumAoa), "Summary");
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    XLSX.utils.book_append_sheet(wb, ws, "On-call");
     XLSX.writeFile(wb, "oncall.xlsx");
   };
 
