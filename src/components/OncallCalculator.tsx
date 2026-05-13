@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { calculateOncall, formatEUR } from "@/lib/oncall";
+import { calculateOncall, formatEUR, workingDaysInMonth } from "@/lib/oncall";
 
 interface Row {
   id: string;
@@ -57,6 +57,17 @@ export function OncallCalculator() {
   const remove = (id: string) =>
     setRows((rs) => (rs.length === 1 ? rs : rs.filter((r) => r.id !== id)));
   const add = () => setRows((rs) => [...rs, newRow()]);
+
+  const [refMonth, setRefMonth] = useState<string>(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  });
+  const refMonthInfo = useMemo(() => {
+    const [y, m] = refMonth.split("-").map(Number);
+    if (!y || !m) return { days: 0, hours: 0 };
+    const days = workingDaysInMonth(y, m - 1);
+    return { days, hours: days * 8 };
+  }, [refMonth]);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:py-16">
