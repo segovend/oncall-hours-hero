@@ -75,7 +75,7 @@ function DateCell({ iso, onChange, disabled }: { iso: string; onChange: (iso: st
 export function OncallV2() {
   const [entries, setEntries] = useState<OnCallEntry[]>([newEntry()]);
 
-  const [monthlyHours, setMonthlyHours] = useState<number>(168);
+  const [monthlyHours, setMonthlyHours] = useState<number>(0);
   const results = useMemo(() => entries.map((e) => compute(e, monthlyHours)), [entries, monthlyHours]);
 
   const update = (id: string, patch: Partial<OnCallEntry>) =>
