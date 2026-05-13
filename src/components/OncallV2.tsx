@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Plus, Trash2, Flag, RotateCcw, AlertTriangle, Download, Clock,
 } from "lucide-react";
@@ -37,10 +37,10 @@ interface DateCellProps {
 function DateCell({ iso, onChange }: DateCellProps) {
   const [text, setText] = useState(isoToDisplay(iso));
   const [invalid, setInvalid] = useState(false);
-  // sync when external iso changes
-  if (isoToDisplay(iso) !== text && document.activeElement?.tagName !== "INPUT") {
-    setText(isoToDisplay(iso));
-  }
+  const [focused, setFocused] = useState(false);
+  useEffect(() => {
+    if (!focused) setText(isoToDisplay(iso));
+  }, [iso, focused]);
   return (
     <Input
       value={text}
@@ -51,7 +51,9 @@ function DateCell({ iso, onChange }: DateCellProps) {
         if (parsed) { setInvalid(false); onChange(parsed); }
         else setInvalid(true);
       }}
+      onFocus={() => setFocused(true)}
       onBlur={() => {
+        setFocused(false);
         const parsed = displayToIso(text);
         if (parsed) { setInvalid(false); setText(isoToDisplay(parsed)); }
       }}
