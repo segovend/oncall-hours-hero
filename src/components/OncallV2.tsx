@@ -401,7 +401,7 @@ function RenderGroup({ cc, rows, subH, subP, update, remove, setManualHours, res
             <Input
               value={r.costCenter}
               onChange={(e) => update(r.id, { costCenter: e.target.value })}
-              placeholder="60DOS"
+              placeholder="00XXX"
               className="h-9 w-full border-white/10 bg-white/5 font-mono"
             />
           </Td>
