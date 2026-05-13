@@ -1,28 +1,12 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { OncallCalculator } from "@/components/OncallCalculator";
+import { createFileRoute } from "@tanstack/react-router";
+import { OncallV2 } from "@/components/OncallV2";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Oncall — calculate on-call hours & pay" },
-      { name: "description", content: "Frontend calculator for on-call hours and pay across multiple people, with weekend and out-of-hours rates." },
+      { title: "On-call hours & payment calculator" },
+      { name: "description", content: "Calculate on-call hours and additional payment per cost center, with overrides, flags and Excel export." },
     ],
   }),
-  component: HomePage,
+  component: OncallV2,
 });
-
-function HomePage() {
-  return (
-    <>
-      <div className="mx-auto max-w-6xl px-4 pt-6">
-        <Link
-          to="/hours"
-          className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-muted-foreground hover:text-foreground"
-        >
-          → Hours-only calculator (16h weekday / 24h weekend)
-        </Link>
-      </div>
-      <OncallCalculator />
-    </>
-  );
-}
