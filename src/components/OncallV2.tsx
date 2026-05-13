@@ -309,14 +309,6 @@ function Row({ r, update, remove, setManualHours, resetHours, toggleFlag, toggle
           }
         />
       </Td>
-      <Td>
-        <Input
-          value={r.costCenter}
-          onChange={(e) => update(r.id, { costCenter: e.target.value })}
-          placeholder="00XXX"
-          className="h-9 w-full font-mono"
-        />
-      </Td>
       <Td align="right">
         <Input
           type="number"
