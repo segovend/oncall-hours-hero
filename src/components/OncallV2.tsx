@@ -171,6 +171,12 @@ export function OncallV2() {
         </div>
       </header>
 
+      {!monthlyHours && (
+        <div className="relative mb-4">
+          <Banner tone="info">Before starting, enter the working hours per month in the top-right field.</Banner>
+        </div>
+      )}
+
       {/* KPI strip */}
       <div className="relative mb-6">
         <Stat icon={<Clock className="h-4 w-4" />} label="Total hours" value={`${grandHours} h`} accent />
