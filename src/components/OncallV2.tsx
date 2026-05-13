@@ -411,7 +411,7 @@ function RenderGroup({ cc, rows, subH, subP, update, remove, setManualHours, res
               min={0}
               value={r.monthlyGrossSalary || ""}
               onChange={(e) => update(r.id, { monthlyGrossSalary: parseFloat(e.target.value) || 0 })}
-              placeholder="2920"
+              placeholder=""
               className={cn(
                 "h-9 w-full border-white/10 bg-white/5 text-right font-mono",
                 r.isFlagged && "border-[var(--color-flag)]/60 bg-[var(--color-flag)]/15",
