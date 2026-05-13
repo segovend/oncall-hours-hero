@@ -1,11 +1,12 @@
 // On-call hours & payment calculator (spec v2)
-// Rules:
-//  - Inclusive date range
-//  - Mon–Fri: 16h, Sat/Sun: 24h
-//  - hourRate = salary / 168
-//  - tenPercent = hourRate * 0.10
-//  - payment = effectiveHours * tenPercent
-//  - All money rounded to 2dp
+// Hours rules:
+//  - If startDate is Monday AND endDate is Monday (different days) → handover week:
+//      start Mon = 7h (17:00–00:00), end Mon = 9h (00:00–09:00)
+//      middle Tue–Fri = 16h, Sat/Sun = 24h
+//  - Otherwise: weekdays Mon–Fri = 16h, Sat/Sun = 24h
+// Payment:
+//  - hourRate = salary / 168, tenPercent = hourRate * 0.10
+//  - payment = ceil(effectiveHours * tenPercent)  (whole euros)
 
 export interface OnCallEntry {
   id: string;
@@ -15,6 +16,7 @@ export interface OnCallEntry {
   costCenter: string;
   monthlyGrossSalary: number;
   manualHoursOverride?: number;
+  manualMode?: boolean; // when true, hours are user-entered, not calculated
   isFlagged?: boolean;
 }
 
@@ -26,6 +28,7 @@ export interface OnCallResult extends OnCallEntry {
   payment: number;
   hasHoursMismatch: boolean;
   isFlagged: boolean;
+  manualMode: boolean;
   errors: string[];
 }
 
@@ -40,11 +43,21 @@ export function calculateHours(fromDate: string, toDate: string): number {
   const s = new Date(fromDate + "T00:00:00");
   const e = new Date(toDate + "T00:00:00");
   if (isNaN(s.getTime()) || isNaN(e.getTime()) || e < s) return 0;
+
+  const handoverWeek =
+    s.getDay() === 1 && e.getDay() === 1 && s.getTime() !== e.getTime();
+
   let h = 0;
   const cur = new Date(s);
   while (cur <= e) {
     const dow = cur.getDay();
-    h += dow === 0 || dow === 6 ? 24 : 16;
+    const isStart = cur.getTime() === s.getTime();
+    const isEnd = cur.getTime() === e.getTime();
+
+    if (handoverWeek && isStart) h += 7;          // Mon 17:00–00:00
+    else if (handoverWeek && isEnd) h += 9;       // Mon 00:00–09:00
+    else if (dow === 0 || dow === 6) h += 24;     // Sat/Sun
+    else h += 16;                                 // Mon–Fri
     cur.setDate(cur.getDate() + 1);
   }
   return h;
@@ -54,34 +67,42 @@ export function compute(entry: OnCallEntry): OnCallResult {
   const errors: string[] = [];
   const s = entry.fromDate ? new Date(entry.fromDate + "T00:00:00") : null;
   const e = entry.toDate ? new Date(entry.toDate + "T00:00:00") : null;
-  if (!s || !e || isNaN(s.getTime()) || isNaN(e.getTime())) {
-    errors.push("Valid dates required");
-  } else if (e < s) {
-    errors.push("End date must be after start date");
+  const manualMode = !!entry.manualMode;
+
+  if (!manualMode) {
+    if (!s || !e || isNaN(s.getTime()) || isNaN(e.getTime())) {
+      errors.push("Valid dates required");
+    } else if (e < s) {
+      errors.push("End date must be after start date");
+    }
   }
   if (!(entry.monthlyGrossSalary > 0)) errors.push("Salary must be a positive number");
   if (!entry.costCenter.trim()) errors.push("Cost center is required");
   if (entry.manualHoursOverride !== undefined && !(entry.manualHoursOverride > 0)) {
     errors.push("Hours must be a positive number");
   }
+  if (manualMode && !(entry.manualHoursOverride && entry.manualHoursOverride > 0)) {
+    errors.push("Enter hours manually");
+  }
 
-  const calculatedHours = calculateHours(entry.fromDate, entry.toDate);
+  const calculatedHours = manualMode ? 0 : calculateHours(entry.fromDate, entry.toDate);
   const effectiveHours =
     entry.manualHoursOverride !== undefined ? entry.manualHoursOverride : calculatedHours;
   const hourRate = entry.monthlyGrossSalary / STANDARD_MONTHLY_HOURS;
   const tenPercent = hourRate * 0.1;
-  // Payment formula: =ROUNDUP(hours * 10%, 0) — ceiling to whole euros
   const payment = Math.ceil(effectiveHours * tenPercent);
 
   return {
     ...entry,
     isFlagged: !!entry.isFlagged,
+    manualMode,
     calculatedHours,
     effectiveHours,
     hourRate: round2(hourRate),
     tenPercent: round2(tenPercent),
     payment,
     hasHoursMismatch:
+      !manualMode &&
       entry.manualHoursOverride !== undefined &&
       entry.manualHoursOverride !== calculatedHours,
     errors,
@@ -96,7 +117,6 @@ export function fmtInt(n: number): string {
   return new Intl.NumberFormat("en-IE", { maximumFractionDigits: 0 }).format(n);
 }
 
-// Date helpers — work in YYYY-MM-DD <-> dd.MM.yy
 export function isoToDisplay(iso: string): string {
   if (!iso) return "";
   const [y, m, d] = iso.split("-");
