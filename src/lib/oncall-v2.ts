@@ -70,7 +70,8 @@ export function compute(entry: OnCallEntry): OnCallResult {
     entry.manualHoursOverride !== undefined ? entry.manualHoursOverride : calculatedHours;
   const hourRate = entry.monthlyGrossSalary / STANDARD_MONTHLY_HOURS;
   const tenPercent = hourRate * 0.1;
-  const payment = effectiveHours * tenPercent;
+  // Payment formula: =ROUNDUP(hours * 10%, 0) — ceiling to whole euros
+  const payment = Math.ceil(effectiveHours * tenPercent);
 
   return {
     ...entry,
@@ -79,7 +80,7 @@ export function compute(entry: OnCallEntry): OnCallResult {
     effectiveHours,
     hourRate: round2(hourRate),
     tenPercent: round2(tenPercent),
-    payment: round2(payment),
+    payment,
     hasHoursMismatch:
       entry.manualHoursOverride !== undefined &&
       entry.manualHoursOverride !== calculatedHours,
@@ -89,6 +90,10 @@ export function compute(entry: OnCallEntry): OnCallResult {
 
 export function fmtMoney(n: number): string {
   return new Intl.NumberFormat("en-IE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+}
+
+export function fmtInt(n: number): string {
+  return new Intl.NumberFormat("en-IE", { maximumFractionDigits: 0 }).format(n);
 }
 
 // Date helpers — work in YYYY-MM-DD <-> dd.MM.yy
