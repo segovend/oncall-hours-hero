@@ -11,6 +11,7 @@ import {
   compute, fmtMoney, fmtInt, isoToDisplay, displayToIso, calculateHours,
   type OnCallEntry, type OnCallResult,
 } from "@/lib/oncall-v2";
+import { exportPaymentDocx } from "@/lib/oncall-docx";
 
 function uid() { return crypto.randomUUID(); }
 
