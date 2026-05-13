@@ -295,11 +295,8 @@ function Td({ children, className, align }: { children?: React.ReactNode; classN
   );
 }
 
-interface GroupProps {
-  cc: string;
-  rows: OnCallResult[];
-  subH: number;
-  subP: number;
+interface RowProps {
+  r: OnCallResult;
   update: (id: string, p: Partial<OnCallEntry>) => void;
   remove: (id: string) => void;
   setManualHours: (id: string, v: string) => void;
@@ -307,125 +304,104 @@ interface GroupProps {
   toggleFlag: (id: string) => void;
   toggleManualMode: (id: string) => void;
 }
-function RenderGroup({ cc, rows, subH, subP, update, remove, setManualHours, resetHours, toggleFlag, toggleManualMode }: GroupProps) {
+function Row({ r, update, remove, setManualHours, resetHours, toggleFlag, toggleManualMode }: RowProps) {
   return (
-    <>
-      <tr className="bg-white/[0.04]">
-        <td colSpan={11} className="px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-          <span className="mr-2 inline-block h-1.5 w-1.5 rounded-full bg-primary" />
-          {cc} <span className="ml-1 opacity-60">· {rows.length}</span>
-        </td>
-      </tr>
-      {rows.map((r) => (
-        <tr key={r.id} className="border-b border-white/5 transition-colors hover:bg-white/[0.03]">
-          <Td>
-            <Input
-              value={r.person}
-              onChange={(e) => update(r.id, { person: e.target.value })}
-              placeholder="Full name"
-              className="h-9 w-full border-white/10 bg-white/5 placeholder:text-muted-foreground/50 focus-visible:ring-1 focus-visible:ring-primary/60"
-            />
-          </Td>
-          <Td>
-            <ModeToggle manual={r.manualMode} onToggle={() => toggleManualMode(r.id)} />
-          </Td>
-          <Td>
-            <DateCell iso={r.fromDate} onChange={(v) => update(r.id, { fromDate: v })} disabled={r.manualMode} />
-          </Td>
-          <Td>
-            <DateCell iso={r.toDate} onChange={(v) => update(r.id, { toDate: v })} disabled={r.manualMode} />
-          </Td>
-          <Td align="right">
-            <Input
-              type="number"
-              min={0}
-              value={r.effectiveHours}
-              onChange={(e) => setManualHours(r.id, e.target.value)}
-              readOnly={!r.manualMode && !r.hasHoursMismatch ? false : false}
-              className={cn(
-                "h-9 w-full border-white/10 bg-white/5 text-right font-mono",
-                r.manualMode && "border-primary/40 bg-primary/10",
-                r.hasHoursMismatch && "border-destructive/50 bg-destructive/10 text-destructive font-semibold",
-              )}
-              title={
-                r.manualMode ? "Manual mode — enter hours directly" :
-                r.hasHoursMismatch ? `Calculated: ${r.calculatedHours}h` : undefined
-              }
-            />
-          </Td>
-          <Td>
-            <Input
-              value={r.costCenter}
-              onChange={(e) => update(r.id, { costCenter: e.target.value })}
-              placeholder="00XXX"
-              className="h-9 w-full border-white/10 bg-white/5 font-mono"
-            />
-          </Td>
-          <Td align="right">
-            <Input
-              type="number"
-              min={0}
-              value={r.monthlyGrossSalary}
-              onChange={(e) => update(r.id, { monthlyGrossSalary: parseFloat(e.target.value) || 0 })}
-              placeholder=""
-              className={cn(
-                "h-9 w-full border-white/10 bg-white/5 text-right font-mono",
-                r.isFlagged && "border-[var(--color-flag)]/60 bg-[var(--color-flag)]/15",
-              )}
-            />
-          </Td>
-          <Td align="right" className="font-mono text-xs text-muted-foreground">{fmtMoney(r.hourRate)}</Td>
-          <Td align="right" className="font-mono text-xs text-muted-foreground">{fmtMoney(r.tenPercent)}</Td>
-          <Td
-            align="right"
-            className={cn(
-              "font-mono font-semibold tabular-nums",
-              r.isFlagged && "rounded-md bg-[var(--color-flag)]/20 text-[var(--color-flag)]",
-            )}
+    <tr className="border-b border-border/60 transition-colors hover:bg-secondary/40">
+      <Td>
+        <Input
+          value={r.person}
+          onChange={(e) => update(r.id, { person: e.target.value })}
+          placeholder="Full name"
+          className="h-9 w-full focus-visible:ring-1 focus-visible:ring-primary/60"
+        />
+      </Td>
+      <Td>
+        <ModeToggle manual={r.manualMode} onToggle={() => toggleManualMode(r.id)} />
+      </Td>
+      <Td>
+        <DateCell iso={r.fromDate} onChange={(v) => update(r.id, { fromDate: v })} disabled={r.manualMode} />
+      </Td>
+      <Td>
+        <DateCell iso={r.toDate} onChange={(v) => update(r.id, { toDate: v })} disabled={r.manualMode} />
+      </Td>
+      <Td align="right">
+        <Input
+          type="number"
+          min={0}
+          value={r.effectiveHours}
+          onChange={(e) => setManualHours(r.id, e.target.value)}
+          className={cn(
+            "h-9 w-full text-right font-mono",
+            r.manualMode && "border-primary/40 bg-primary/10",
+            r.hasHoursMismatch && "border-destructive/50 bg-destructive/10 text-destructive font-semibold",
+          )}
+          title={
+            r.manualMode ? "Manual mode — enter hours directly" :
+            r.hasHoursMismatch ? `Calculated: ${r.calculatedHours}h` : undefined
+          }
+        />
+      </Td>
+      <Td>
+        <Input
+          value={r.costCenter}
+          onChange={(e) => update(r.id, { costCenter: e.target.value })}
+          placeholder="00XXX"
+          className="h-9 w-full font-mono"
+        />
+      </Td>
+      <Td align="right">
+        <Input
+          type="number"
+          min={0}
+          value={r.monthlyGrossSalary}
+          onChange={(e) => update(r.id, { monthlyGrossSalary: parseFloat(e.target.value) || 0 })}
+          className={cn(
+            "h-9 w-full text-right font-mono",
+            r.isFlagged && "border-[var(--color-flag)]/60 bg-[var(--color-flag)]/15",
+          )}
+        />
+      </Td>
+      <Td align="right" className="font-mono text-xs text-muted-foreground">{fmtMoney(r.hourRate)}</Td>
+      <Td align="right" className="font-mono text-xs text-muted-foreground">{fmtMoney(r.tenPercent)}</Td>
+      <Td
+        align="right"
+        className={cn(
+          "font-mono font-semibold tabular-nums",
+          r.isFlagged && "rounded-md bg-[var(--color-flag)]/20 text-[var(--color-flag)]",
+        )}
+      >
+        € {fmtInt(r.payment)}
+      </Td>
+      <Td>
+        <div className="flex items-center justify-end gap-0.5">
+          {r.hasHoursMismatch && (
+            <Button
+              variant="ghost" size="icon" className="h-8 w-8"
+              onClick={() => resetHours(r.id)}
+              aria-label="Reset hours"
+              title={`Reset to ${r.calculatedHours}h`}
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+            </Button>
+          )}
+          <Button
+            variant="ghost" size="icon"
+            className={cn("h-8 w-8", r.isFlagged && "text-[var(--color-flag)]")}
+            onClick={() => toggleFlag(r.id)}
+            aria-label="Flag for review"
           >
-            € {fmtInt(r.payment)}
-          </Td>
-          <Td>
-            <div className="flex items-center justify-end gap-0.5">
-              {r.hasHoursMismatch && (
-                <Button
-                  variant="ghost" size="icon" className="h-8 w-8 hover:bg-white/10"
-                  onClick={() => resetHours(r.id)}
-                  aria-label="Reset hours"
-                  title={`Reset to ${r.calculatedHours}h`}
-                >
-                  <RotateCcw className="h-3.5 w-3.5" />
-                </Button>
-              )}
-              <Button
-                variant="ghost" size="icon"
-                className={cn("h-8 w-8 hover:bg-white/10", r.isFlagged && "text-[var(--color-flag)]")}
-                onClick={() => toggleFlag(r.id)}
-                aria-label="Flag for review"
-              >
-                <Flag className={cn("h-4 w-4", r.isFlagged && "fill-current")} />
-              </Button>
-              <Button
-                variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                onClick={() => remove(r.id)}
-                aria-label="Delete row"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </Td>
-        </tr>
-      ))}
-      <tr className="border-b border-white/10 bg-white/[0.02]">
-        <td colSpan={4} className="px-4 py-2 text-right text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-          Subtotal
-        </td>
-        <td className="px-3 py-2 text-right font-mono font-semibold">{subH}</td>
-        <td colSpan={4} />
-        <td className="px-3 py-2 text-right font-mono font-semibold">€ {fmtInt(subP)}</td>
-        <td />
-      </tr>
-    </>
+            <Flag className={cn("h-4 w-4", r.isFlagged && "fill-current")} />
+          </Button>
+          <Button
+            variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+            onClick={() => remove(r.id)}
+            aria-label="Delete row"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </Td>
+    </tr>
   );
 }
 
