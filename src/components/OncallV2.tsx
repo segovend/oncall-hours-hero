@@ -16,15 +16,11 @@ import { exportPaymentDocx } from "@/lib/oncall-docx";
 function uid() { return crypto.randomUUID(); }
 
 function newEntry(cc = "", person = ""): OnCallEntry {
-  const today = new Date();
-  const iso = (d: Date) =>
-    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  const end = new Date(today); end.setDate(today.getDate() + 6);
   return {
     id: uid(),
     person,
-    fromDate: iso(today),
-    toDate: iso(end),
+    fromDate: "",
+    toDate: "",
     costCenter: cc,
     monthlyGrossSalary: 0,
   };
