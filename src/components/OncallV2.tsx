@@ -172,9 +172,8 @@ export function OncallV2() {
       </header>
 
       {/* KPI strip */}
-      <div className="relative mb-6 grid grid-cols-2 gap-3">
+      <div className="relative mb-6">
         <Stat icon={<Clock className="h-4 w-4" />} label="Total hours" value={`${grandHours} h`} accent />
-        <Stat icon={<Wallet className="h-4 w-4" />} label="Total payment" value={`€ ${fmtInt(grandPayment)}`} />
       </div>
 
       {(hasMismatch || hasFlagged) && (
