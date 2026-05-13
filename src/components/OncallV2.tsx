@@ -200,11 +200,10 @@ export function OncallV2() {
       </header>
 
       {/* KPI strip */}
-      <div className="relative mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="relative mb-6 grid grid-cols-3 gap-3">
         <Stat icon={<Users className="h-4 w-4" />} label="People" value={String(peopleCount)} />
-        <Stat icon={<Clock className="h-4 w-4" />} label="Total hours" value={`${grand.hours} h`} />
-        <Stat icon={<Wallet className="h-4 w-4" />} label="Total payment" value={`€ ${fmtInt(grand.payment)}`} accent />
-        <Stat icon={<Flag className="h-4 w-4" />} label="Cost centers" value={String(groups.length)} />
+        <Stat icon={<Clock className="h-4 w-4" />} label="Total hours" value={`${grandHours} h`} accent />
+        <Stat icon={<Flag className="h-4 w-4" />} label="Cost centers" value={String(ccCount)} />
       </div>
 
       {(hasMismatch || hasFlagged) && (
@@ -216,7 +215,7 @@ export function OncallV2() {
         </div>
       )}
 
-      <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-card/60 shadow-[var(--shadow-soft)] backdrop-blur-xl">
+      <div className="relative overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-soft)] backdrop-blur-xl">
         <div className="overflow-x-auto">
           <table className="w-full table-fixed border-collapse text-sm">
             <colgroup>
@@ -232,8 +231,8 @@ export function OncallV2() {
               <col className={COLS.payment} />
               <col className={COLS.actions} />
             </colgroup>
-            <thead className="bg-white/[0.03] text-[10px] uppercase tracking-[0.12em] text-muted-foreground/80">
-              <tr className="border-b border-white/10">
+            <thead className="bg-secondary/60 text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+              <tr className="border-b border-border">
                 <Th>Person</Th>
                 <Th>Mode</Th>
                 <Th>From</Th>
@@ -248,34 +247,18 @@ export function OncallV2() {
               </tr>
             </thead>
             <tbody>
-              {groups.map(([cc, rows]) => {
-                const subH = rows.reduce((a, r) => a + r.effectiveHours, 0);
-                const subP = rows.reduce((a, r) => a + r.payment, 0);
-                return (
-                  <RenderGroup
-                    key={cc}
-                    cc={cc}
-                    rows={rows}
-                    subH={subH}
-                    subP={subP}
-                    update={update}
-                    remove={remove}
-                    setManualHours={setManualHours}
-                    resetHours={resetHours}
-                    toggleFlag={toggleFlag}
-                    toggleManualMode={toggleManualMode}
-                  />
-                );
-              })}
-              <tr className="border-t-2 border-white/15 bg-[image:var(--gradient-accent)]/10">
-                <td className="px-4 py-4 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground" colSpan={4}>
-                  Grand total
-                </td>
-                <td className="px-3 py-4 text-right font-mono text-base font-semibold">{grand.hours}</td>
-                <td colSpan={4} />
-                <td className="px-3 py-4 text-right font-mono text-base font-semibold text-primary">€ {fmtInt(grand.payment)}</td>
-                <td />
-              </tr>
+              {results.map((r) => (
+                <Row
+                  key={r.id}
+                  r={r}
+                  update={update}
+                  remove={remove}
+                  setManualHours={setManualHours}
+                  resetHours={resetHours}
+                  toggleFlag={toggleFlag}
+                  toggleManualMode={toggleManualMode}
+                />
+              ))}
             </tbody>
           </table>
         </div>
