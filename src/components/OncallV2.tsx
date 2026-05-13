@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  Plus, Trash2, Flag, RotateCcw, AlertTriangle, Clock, Wallet,
+  Plus, Trash2, Flag, RotateCcw, AlertTriangle, Clock,
   Calculator, PencilLine, FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
