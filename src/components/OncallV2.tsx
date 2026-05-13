@@ -409,7 +409,7 @@ function RenderGroup({ cc, rows, subH, subP, update, remove, setManualHours, res
             <Input
               type="number"
               min={0}
-              value={r.monthlyGrossSalary || ""}
+              value={r.monthlyGrossSalary}
               onChange={(e) => update(r.id, { monthlyGrossSalary: parseFloat(e.target.value) || 0 })}
               placeholder=""
               className={cn(
