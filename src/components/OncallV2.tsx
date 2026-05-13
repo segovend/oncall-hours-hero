@@ -129,7 +129,7 @@ export function OncallV2() {
     setEntries((es) => es.map((e) => (e.id === id ? { ...e, isFlagged: !e.isFlagged } : e)));
 
   const grandHours = results.reduce((a, r) => a + r.effectiveHours, 0);
-  const grandPayment = results.reduce((a, r) => a + r.payment, 0);
+  
   const hasMismatch = results.some((r) => r.hasHoursMismatch);
   const hasFlagged = results.some((r) => r.isFlagged);
 
