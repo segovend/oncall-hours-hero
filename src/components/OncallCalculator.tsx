@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { calculateOncall, formatEUR } from "@/lib/oncall";
+import { calculateOncall, formatEUR, workingDaysInMonth } from "@/lib/oncall";
 
 interface Row {
   id: string;
@@ -58,6 +58,17 @@ export function OncallCalculator() {
     setRows((rs) => (rs.length === 1 ? rs : rs.filter((r) => r.id !== id)));
   const add = () => setRows((rs) => [...rs, newRow()]);
 
+  const [refMonth, setRefMonth] = useState<string>(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  });
+  const refMonthInfo = useMemo(() => {
+    const [y, m] = refMonth.split("-").map(Number);
+    if (!y || !m) return { days: 0, hours: 0 };
+    const days = workingDaysInMonth(y, m - 1);
+    return { days, hours: days * 8 };
+  }, [refMonth]);
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:py-16">
       <header className="mb-10 flex flex-col gap-3">
@@ -73,6 +84,40 @@ export function OncallCalculator() {
           using working days of each month.
         </p>
       </header>
+
+      <section className="mb-6 flex flex-wrap items-end gap-4 rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-soft)]">
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="ref-month" className="text-xs uppercase tracking-wider text-muted-foreground">
+            Reference month
+          </Label>
+          <Input
+            id="ref-month"
+            type="month"
+            value={refMonth}
+            onChange={(e) => setRefMonth(e.target.value)}
+            className="w-[180px]"
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+            Working days
+          </Label>
+          <div className="flex h-9 items-center rounded-md border border-input bg-secondary px-3 font-mono text-sm">
+            {refMonthInfo.days}
+          </div>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+            Working hours in month
+          </Label>
+          <div className="flex h-9 items-center rounded-md border border-transparent bg-[image:var(--gradient-accent)] px-3 font-mono text-sm font-semibold text-primary-foreground">
+            {refMonthInfo.hours} h
+          </div>
+        </div>
+        <p className="ml-auto max-w-xs text-xs text-muted-foreground">
+          Mon–Fri × 8h. Used as the divisor when turning a monthly salary into an hourly rate.
+        </p>
+      </section>
 
       <section className="rounded-2xl border border-border bg-card shadow-[var(--shadow-soft)]">
         <div className="overflow-x-auto">
