@@ -203,16 +203,29 @@ export function OncallV2() {
             <span className="bg-[image:var(--gradient-hero)] bg-clip-text text-transparent">beautifully precise.</span>
           </h1>
           <p className="max-w-xl text-sm text-muted-foreground">
-            Mon–Fri 16h · weekends 24h · Mon→Mon handover splits 7/9. Pay = salary ÷ 168 × 10% × hours, rounded up.
+            Mon–Fri 16h · weekends 24h · Mon→Mon handover splits 7/9. Pay = salary ÷ {monthlyHours} × 10% × hours, rounded up.
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={exportXlsx} className="gap-2 border-white/15 bg-white/5 backdrop-blur hover:bg-white/10">
+        <div className="flex flex-wrap items-end gap-2">
+          <label className="flex flex-col gap-1.5">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              Working hours / month
+            </span>
+            <Input
+              type="number"
+              min={1}
+              value={monthlyHours || ""}
+              onChange={(e) => setMonthlyHours(parseFloat(e.target.value) || 0)}
+              className="h-10 w-[170px] border-white/15 bg-white/5 text-right font-mono text-base font-semibold backdrop-blur focus-visible:ring-1 focus-visible:ring-primary/60"
+            />
+          </label>
+          <Button variant="outline" onClick={exportXlsx} className="h-10 gap-2 border-white/15 bg-white/5 backdrop-blur hover:bg-white/10">
             <Download className="h-4 w-4" /> Export Excel
           </Button>
-          <Button onClick={add} className="gap-2 bg-[image:var(--gradient-accent)] text-primary-foreground shadow-[var(--shadow-glow)] hover:opacity-90">
+          <Button onClick={add} className="h-10 gap-2 bg-[image:var(--gradient-accent)] text-primary-foreground shadow-[var(--shadow-glow)] hover:opacity-90">
             <Plus className="h-4 w-4" /> Add row
           </Button>
+
         </div>
       </header>
 
