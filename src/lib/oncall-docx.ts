@@ -11,7 +11,6 @@ const MONTHS = [
 
 interface PersonAgg {
   name: string;
-  costCenters: string[];
   amount: number;
 }
 
@@ -19,11 +18,8 @@ function aggregate(results: OnCallResult[]): PersonAgg[] {
   const map = new Map<string, PersonAgg>();
   for (const r of results) {
     const key = (r.person || "Unnamed").trim();
-    if (!map.has(key)) map.set(key, { name: key, costCenters: [], amount: 0 });
-    const p = map.get(key)!;
-    p.amount += r.payment;
-    const cc = (r.costCenter || "").trim();
-    if (cc && !p.costCenters.includes(cc)) p.costCenters.push(cc);
+    if (!map.has(key)) map.set(key, { name: key, amount: 0 });
+    map.get(key)!.amount += r.payment;
   }
   return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
 }
@@ -62,16 +58,14 @@ export async function exportPaymentDocx(results: OnCallResult[]): Promise<void> 
   const { month, year } = detectMonthYear(results);
   const total = people.reduce((a, p) => a + p.amount, 0);
 
-  const COL_NAME = 4680;
-  const COL_CC = 2340;
-  const COL_AMT = 2340;
-  const TABLE_W = COL_NAME + COL_CC + COL_AMT;
+  const COL_NAME = 6240;
+  const COL_AMT = 3120;
+  const TABLE_W = COL_NAME + COL_AMT;
 
   const headerRow = new TableRow({
     tableHeader: true,
     children: [
       makeCell("Name", { bold: true, shading: "EFEFEF", width: COL_NAME }),
-      makeCell("Cost Center", { bold: true, shading: "EFEFEF", width: COL_CC }),
       makeCell("Amount", { bold: true, shading: "EFEFEF", width: COL_AMT, align: AlignmentType.RIGHT }),
     ],
   });
@@ -81,7 +75,6 @@ export async function exportPaymentDocx(results: OnCallResult[]): Promise<void> 
       new TableRow({
         children: [
           makeCell(p.name, { width: COL_NAME }),
-          makeCell(p.costCenters.join(", "), { width: COL_CC }),
           makeCell(`€ ${p.amount.toLocaleString("en-IE")}`, { width: COL_AMT, align: AlignmentType.RIGHT }),
         ],
       }),
@@ -90,7 +83,6 @@ export async function exportPaymentDocx(results: OnCallResult[]): Promise<void> 
   const totalRow = new TableRow({
     children: [
       makeCell("Total", { bold: true, shading: "F7F7F7", width: COL_NAME }),
-      makeCell("", { shading: "F7F7F7", width: COL_CC }),
       makeCell(`€ ${total.toLocaleString("en-IE")}`, { bold: true, shading: "F7F7F7", width: COL_AMT, align: AlignmentType.RIGHT }),
     ],
   });
@@ -127,7 +119,7 @@ export async function exportPaymentDocx(results: OnCallResult[]): Promise<void> 
           }),
           new Table({
             width: { size: TABLE_W, type: WidthType.DXA },
-            columnWidths: [COL_NAME, COL_CC, COL_AMT],
+            columnWidths: [COL_NAME, COL_AMT],
             rows: [headerRow, ...dataRows, totalRow],
           }),
           new Paragraph({ spacing: { before: 720 }, children: [new TextRun("")] }),
