@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  Plus, Trash2, Flag, RotateCcw, AlertTriangle, Download, Clock, Users, Wallet,
-  Sparkles, Calculator, PencilLine, FileText,
+  Plus, Trash2, Flag, RotateCcw, AlertTriangle, Clock, Wallet,
+  Calculator, PencilLine, FileText,
 } from "lucide-react";
-import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
