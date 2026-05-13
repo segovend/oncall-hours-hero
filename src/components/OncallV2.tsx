@@ -16,15 +16,11 @@ import { exportPaymentDocx } from "@/lib/oncall-docx";
 function uid() { return crypto.randomUUID(); }
 
 function newEntry(cc = "", person = ""): OnCallEntry {
-  const today = new Date();
-  const iso = (d: Date) =>
-    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  const end = new Date(today); end.setDate(today.getDate() + 6);
   return {
     id: uid(),
     person,
-    fromDate: iso(today),
-    toDate: iso(end),
+    fromDate: "",
+    toDate: "",
     costCenter: cc,
     monthlyGrossSalary: 0,
   };
@@ -387,7 +383,7 @@ function RenderGroup({ cc, rows, subH, subP, update, remove, setManualHours, res
             <Input
               type="number"
               min={0}
-              value={r.effectiveHours || ""}
+              value={r.effectiveHours}
               onChange={(e) => setManualHours(r.id, e.target.value)}
               readOnly={!r.manualMode && !r.hasHoursMismatch ? false : false}
               className={cn(
@@ -405,7 +401,7 @@ function RenderGroup({ cc, rows, subH, subP, update, remove, setManualHours, res
             <Input
               value={r.costCenter}
               onChange={(e) => update(r.id, { costCenter: e.target.value })}
-              placeholder="60DOS"
+              placeholder="00XXX"
               className="h-9 w-full border-white/10 bg-white/5 font-mono"
             />
           </Td>
@@ -413,9 +409,9 @@ function RenderGroup({ cc, rows, subH, subP, update, remove, setManualHours, res
             <Input
               type="number"
               min={0}
-              value={r.monthlyGrossSalary || ""}
+              value={r.monthlyGrossSalary}
               onChange={(e) => update(r.id, { monthlyGrossSalary: parseFloat(e.target.value) || 0 })}
-              placeholder="2920"
+              placeholder=""
               className={cn(
                 "h-9 w-full border-white/10 bg-white/5 text-right font-mono",
                 r.isFlagged && "border-[var(--color-flag)]/60 bg-[var(--color-flag)]/15",
