@@ -85,6 +85,40 @@ export function OncallCalculator() {
         </p>
       </header>
 
+      <section className="mb-6 flex flex-wrap items-end gap-4 rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-soft)]">
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="ref-month" className="text-xs uppercase tracking-wider text-muted-foreground">
+            Reference month
+          </Label>
+          <Input
+            id="ref-month"
+            type="month"
+            value={refMonth}
+            onChange={(e) => setRefMonth(e.target.value)}
+            className="w-[180px]"
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+            Working days
+          </Label>
+          <div className="flex h-9 items-center rounded-md border border-input bg-secondary px-3 font-mono text-sm">
+            {refMonthInfo.days}
+          </div>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+            Working hours in month
+          </Label>
+          <div className="flex h-9 items-center rounded-md border border-transparent bg-[image:var(--gradient-accent)] px-3 font-mono text-sm font-semibold text-primary-foreground">
+            {refMonthInfo.hours} h
+          </div>
+        </div>
+        <p className="ml-auto max-w-xs text-xs text-muted-foreground">
+          Mon–Fri × 8h. Used as the divisor when turning a monthly salary into an hourly rate.
+        </p>
+      </section>
+
       <section className="rounded-2xl border border-border bg-card shadow-[var(--shadow-soft)]">
         <div className="overflow-x-auto">
           <Table>
