@@ -88,7 +88,8 @@ export function compute(entry: OnCallEntry, monthlyHours: number = STANDARD_MONT
   const calculatedHours = manualMode ? 0 : calculateHours(entry.fromDate, entry.toDate);
   const effectiveHours =
     entry.manualHoursOverride !== undefined ? entry.manualHoursOverride : calculatedHours;
-  const hourRate = entry.monthlyGrossSalary / STANDARD_MONTHLY_HOURS;
+  const divisor = monthlyHours > 0 ? monthlyHours : STANDARD_MONTHLY_HOURS;
+  const hourRate = entry.monthlyGrossSalary / divisor;
   const tenPercent = hourRate * 0.1;
   const payment = Math.ceil(effectiveHours * tenPercent);
 
