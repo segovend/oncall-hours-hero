@@ -92,6 +92,10 @@ export function fmtMoney(n: number): string {
   return new Intl.NumberFormat("en-IE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
 }
 
+export function fmtInt(n: number): string {
+  return new Intl.NumberFormat("en-IE", { maximumFractionDigits: 0 }).format(n);
+}
+
 // Date helpers — work in YYYY-MM-DD <-> dd.MM.yy
 export function isoToDisplay(iso: string): string {
   if (!iso) return "";

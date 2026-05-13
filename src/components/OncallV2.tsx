@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import {
-  compute, fmtMoney, isoToDisplay, displayToIso, calculateHours,
+  compute, fmtMoney, fmtInt, isoToDisplay, displayToIso, calculateHours,
   type OnCallEntry, type OnCallResult,
 } from "@/lib/oncall-v2";
 
@@ -146,7 +146,7 @@ export function OncallV2() {
         ]);
         subH += r.effectiveHours; subP += r.payment;
       }
-      aoa.push(["", "", "", subH, "Subtotal", "", "", "", Math.round(subP * 100) / 100]);
+      aoa.push(["", "", "", subH, "Subtotal", "", "", "", subP]);
       const ws = XLSX.utils.aoa_to_sheet(aoa);
       rows.forEach((r, i) => {
         const rowIdx = i + 1;
@@ -202,7 +202,7 @@ export function OncallV2() {
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat icon={<Users className="h-4 w-4" />} label="People" value={String(peopleCount)} />
         <Stat icon={<Clock className="h-4 w-4" />} label="Total hours" value={`${grand.hours} h`} />
-        <Stat icon={<Wallet className="h-4 w-4" />} label="Total payment" value={`€ ${fmtMoney(grand.payment)}`} accent />
+        <Stat icon={<Wallet className="h-4 w-4" />} label="Total payment" value={`€ ${fmtInt(grand.payment)}`} accent />
         <Stat icon={<Flag className="h-4 w-4" />} label="Cost centers" value={String(groups.length)} />
       </div>
 
@@ -269,7 +269,7 @@ export function OncallV2() {
                 </td>
                 <td className="px-3 py-3 text-right font-mono">{grand.hours}</td>
                 <td colSpan={4} />
-                <td className="px-3 py-3 text-right font-mono">€ {fmtMoney(grand.payment)}</td>
+                <td className="px-3 py-3 text-right font-mono">€ {fmtInt(grand.payment)}</td>
                 <td />
               </tr>
             </tbody>
@@ -388,7 +388,7 @@ function RenderGroup({ cc, rows, subH, subP, update, remove, setManualHours, res
               r.isFlagged && "bg-[hsl(54_100%_62%/0.35)]",
             )}
           >
-            {fmtMoney(r.payment)}
+            {fmtInt(r.payment)}
           </Td>
           <Td>
             <div className="flex items-center justify-end gap-0.5">
@@ -427,7 +427,7 @@ function RenderGroup({ cc, rows, subH, subP, update, remove, setManualHours, res
         </td>
         <td className="px-3 py-2 text-right font-mono font-semibold">{subH}</td>
         <td colSpan={4} />
-        <td className="px-3 py-2 text-right font-mono font-semibold">€ {fmtMoney(subP)}</td>
+        <td className="px-3 py-2 text-right font-mono font-semibold">€ {fmtInt(subP)}</td>
         <td />
       </tr>
     </>
