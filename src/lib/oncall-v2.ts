@@ -9,6 +9,7 @@
 
 export interface OnCallEntry {
   id: string;
+  person: string;
   fromDate: string; // YYYY-MM-DD
   toDate: string;
   costCenter: string;
