@@ -129,21 +129,8 @@ export function OncallV2() {
   const toggleFlag = (id: string) =>
     setEntries((es) => es.map((e) => (e.id === id ? { ...e, isFlagged: !e.isFlagged } : e)));
 
-  const groups = useMemo(() => {
-    const map = new Map<string, OnCallResult[]>();
-    for (const r of results) {
-      const key = r.costCenter || "—";
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(r);
-    }
-    return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
-  }, [results]);
-
-  const grand = results.reduce(
-    (a, r) => ({ hours: a.hours + r.effectiveHours, payment: a.payment + r.payment }),
-    { hours: 0, payment: 0 },
-  );
-
+  const grandHours = results.reduce((a, r) => a + r.effectiveHours, 0);
+  const ccCount = new Set(entries.map((e) => e.costCenter.trim()).filter(Boolean)).size;
   const hasMismatch = results.some((r) => r.hasHoursMismatch);
   const hasFlagged = results.some((r) => r.isFlagged);
   const peopleCount = new Set(entries.map((e) => e.person.trim()).filter(Boolean)).size;
