@@ -232,17 +232,6 @@ export function OncallV2() {
         </div>
       </div>
 
-      {results.some((r) => r.errors.length > 0) && (
-        <div className="mt-4 space-y-1 text-sm text-destructive">
-          {results.flatMap((r) =>
-            r.errors.map((e, i) => (
-              <div key={r.id + i}>
-                {r.person || "Unnamed"} · {isoToDisplay(r.fromDate) || "—"}: {e}
-              </div>
-            )),
-          )}
-        </div>
-      )}
     </div>
   );
 }
