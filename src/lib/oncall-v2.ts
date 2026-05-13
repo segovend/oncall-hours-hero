@@ -77,7 +77,6 @@ export function compute(entry: OnCallEntry, monthlyHours: number = STANDARD_MONT
     }
   }
   if (!(entry.monthlyGrossSalary > 0)) errors.push("Salary must be a positive number");
-  if (!entry.costCenter.trim()) errors.push("Cost center is required");
   if (entry.manualHoursOverride !== undefined && !(entry.manualHoursOverride > 0)) {
     errors.push("Hours must be a positive number");
   }
