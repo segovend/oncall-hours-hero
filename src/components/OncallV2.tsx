@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Plus, Trash2, Flag, RotateCcw, AlertTriangle, Download, Clock, Users, Wallet,
-  Sparkles, Calculator, PencilLine,
+  Sparkles, Calculator, PencilLine, FileText,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import {
   compute, fmtMoney, fmtInt, isoToDisplay, displayToIso, calculateHours,
   type OnCallEntry, type OnCallResult,
 } from "@/lib/oncall-v2";
+import { exportPaymentDocx } from "@/lib/oncall-docx";
 
 function uid() { return crypto.randomUUID(); }
 
@@ -220,7 +221,10 @@ export function OncallV2() {
             />
           </label>
           <Button variant="outline" onClick={exportXlsx} className="h-10 gap-2 border-white/15 bg-white/5 backdrop-blur hover:bg-white/10">
-            <Download className="h-4 w-4" /> Export Excel
+            <Download className="h-4 w-4" /> Excel
+          </Button>
+          <Button variant="outline" onClick={() => exportPaymentDocx(results)} className="h-10 gap-2 border-white/15 bg-white/5 backdrop-blur hover:bg-white/10">
+            <FileText className="h-4 w-4" /> Word
           </Button>
           <Button onClick={add} className="h-10 gap-2 bg-[image:var(--gradient-accent)] text-primary-foreground shadow-[var(--shadow-glow)] hover:opacity-90">
             <Plus className="h-4 w-4" /> Add row
