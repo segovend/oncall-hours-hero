@@ -11,7 +11,6 @@ const MONTHS = [
 
 interface PersonAgg {
   name: string;
-  costCenters: string[];
   amount: number;
 }
 
@@ -19,11 +18,8 @@ function aggregate(results: OnCallResult[]): PersonAgg[] {
   const map = new Map<string, PersonAgg>();
   for (const r of results) {
     const key = (r.person || "Unnamed").trim();
-    if (!map.has(key)) map.set(key, { name: key, costCenters: [], amount: 0 });
-    const p = map.get(key)!;
-    p.amount += r.payment;
-    const cc = (r.costCenter || "").trim();
-    if (cc && !p.costCenters.includes(cc)) p.costCenters.push(cc);
+    if (!map.has(key)) map.set(key, { name: key, amount: 0 });
+    map.get(key)!.amount += r.payment;
   }
   return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
 }
