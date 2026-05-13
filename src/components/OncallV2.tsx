@@ -82,7 +82,8 @@ export function OncallV2() {
     { ...newEntry("60DOS", "John Smith"), monthlyGrossSalary: 2920, fromDate: "2026-04-06", toDate: "2026-04-12" },
   ]);
 
-  const results = useMemo(() => entries.map(compute), [entries]);
+  const [monthlyHours, setMonthlyHours] = useState<number>(168);
+  const results = useMemo(() => entries.map((e) => compute(e, monthlyHours)), [entries, monthlyHours]);
 
   const update = (id: string, patch: Partial<OnCallEntry>) =>
     setEntries((es) => es.map((e) => (e.id === id ? { ...e, ...patch } : e)));
