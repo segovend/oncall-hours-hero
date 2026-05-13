@@ -78,10 +78,7 @@ function DateCell({ iso, onChange, disabled }: { iso: string; onChange: (iso: st
 }
 
 export function OncallV2() {
-  const [entries, setEntries] = useState<OnCallEntry[]>([
-    { ...newEntry("60DOS", "Jane Doe"), monthlyGrossSalary: 2712, fromDate: "2026-04-01", toDate: "2026-04-05" },
-    { ...newEntry("60DOS", "John Smith"), monthlyGrossSalary: 2920, fromDate: "2026-04-06", toDate: "2026-04-12" },
-  ]);
+  const [entries, setEntries] = useState<OnCallEntry[]>([newEntry()]);
 
   const [monthlyHours, setMonthlyHours] = useState<number>(168);
   const results = useMemo(() => entries.map((e) => compute(e, monthlyHours)), [entries, monthlyHours]);
