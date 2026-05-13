@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Plus, Trash2, Flag, RotateCcw, AlertTriangle, Download, Clock, Users, Wallet,
+  Sparkles, Calculator, PencilLine,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
@@ -28,22 +29,21 @@ function newEntry(cc = "", person = ""): OnCallEntry {
   };
 }
 
-// ---------- Column layout (single source of truth) ----------
-// Tailwind classes per column — used in both header and body for perfect alignment.
 const COLS = {
-  person:  "w-[180px]",
-  from:    "w-[120px]",
-  to:      "w-[120px]",
-  hours:   "w-[110px] text-right",
-  cc:      "w-[110px]",
-  salary:  "w-[130px] text-right",
-  rate:    "w-[100px] text-right",
-  ten:     "w-[100px] text-right",
-  payment: "w-[130px] text-right",
+  person:  "w-[170px]",
+  mode:    "w-[110px]",
+  from:    "w-[110px]",
+  to:      "w-[110px]",
+  hours:   "w-[100px]",
+  cc:      "w-[90px]",
+  salary:  "w-[120px]",
+  rate:    "w-[88px]",
+  ten:     "w-[80px]",
+  payment: "w-[120px]",
   actions: "w-[110px]",
 } as const;
 
-function DateCell({ iso, onChange }: { iso: string; onChange: (iso: string) => void }) {
+function DateCell({ iso, onChange, disabled }: { iso: string; onChange: (iso: string) => void; disabled?: boolean }) {
   const [text, setText] = useState(isoToDisplay(iso));
   const [invalid, setInvalid] = useState(false);
   const [focused, setFocused] = useState(false);
@@ -51,6 +51,7 @@ function DateCell({ iso, onChange }: { iso: string; onChange: (iso: string) => v
   return (
     <Input
       value={text}
+      disabled={disabled}
       onChange={(e) => {
         const v = e.target.value;
         setText(v);
@@ -65,7 +66,12 @@ function DateCell({ iso, onChange }: { iso: string; onChange: (iso: string) => v
         if (parsed) { setInvalid(false); setText(isoToDisplay(parsed)); }
       }}
       placeholder="dd.mm.yy"
-      className={cn("h-9 w-full font-mono text-sm", invalid && "border-destructive")}
+      className={cn(
+        "h-9 w-full rounded-md border-white/10 bg-white/5 font-mono text-sm tracking-tight text-foreground placeholder:text-muted-foreground/50",
+        "focus-visible:ring-1 focus-visible:ring-primary/60",
+        invalid && "border-destructive/60",
+        disabled && "opacity-40 cursor-not-allowed",
+      )}
     />
   );
 }
@@ -95,13 +101,29 @@ export function OncallV2() {
       if (num === undefined || Number.isNaN(num)) {
         const { manualHoursOverride: _omit, ...rest } = e; return rest;
       }
-      const calc = calculateHours(e.fromDate, e.toDate);
-      if (num === calc) {
-        const { manualHoursOverride: _omit, ...rest } = e; return rest;
+      // In manual mode always store override; in auto mode strip override if equal to calc
+      if (!e.manualMode) {
+        const calc = calculateHours(e.fromDate, e.toDate);
+        if (num === calc) {
+          const { manualHoursOverride: _omit, ...rest } = e; return rest;
+        }
       }
       return { ...e, manualHoursOverride: num };
     }));
   };
+
+  const toggleManualMode = (id: string) =>
+    setEntries((es) => es.map((e) => {
+      if (e.id !== id) return e;
+      if (e.manualMode) {
+        // Switching back to auto: drop override
+        const { manualMode: _m, manualHoursOverride: _h, ...rest } = e;
+        return rest;
+      }
+      // Switching to manual: seed override with current calculated value
+      const seed = e.manualHoursOverride ?? calculateHours(e.fromDate, e.toDate);
+      return { ...e, manualMode: true, manualHoursOverride: seed };
+    }));
 
   const resetHours = (id: string) =>
     setEntries((es) => es.map((e) => {
@@ -135,30 +157,20 @@ export function OncallV2() {
     const wb = XLSX.utils.book_new();
     for (const [cc, rows] of groups) {
       const aoa: (string | number)[][] = [
-        ["Person", "From", "To", "Hours", "CC", "Salary", "Hour rate", "10%", "Payment"],
+        ["Person", "Mode", "From", "To", "Hours", "CC", "Salary", "Hour rate", "10%", "Payment"],
       ];
       let subH = 0, subP = 0;
       for (const r of rows) {
         aoa.push([
-          r.person, isoToDisplay(r.fromDate), isoToDisplay(r.toDate),
+          r.person, r.manualMode ? "Manual" : "Auto",
+          isoToDisplay(r.fromDate), isoToDisplay(r.toDate),
           r.effectiveHours, r.costCenter, r.monthlyGrossSalary,
           r.hourRate, r.tenPercent, r.payment,
         ]);
         subH += r.effectiveHours; subP += r.payment;
       }
-      aoa.push(["", "", "", subH, "Subtotal", "", "", "", subP]);
+      aoa.push(["", "", "", "", subH, "Subtotal", "", "", "", subP]);
       const ws = XLSX.utils.aoa_to_sheet(aoa);
-      rows.forEach((r, i) => {
-        const rowIdx = i + 1;
-        if (r.hasHoursMismatch) {
-          const ref = XLSX.utils.encode_cell({ r: rowIdx, c: 3 });
-          if (ws[ref]) ws[ref].s = { font: { color: { rgb: "FF0000" } } };
-        }
-        if (r.isFlagged) {
-          const ref = XLSX.utils.encode_cell({ r: rowIdx, c: 8 });
-          if (ws[ref]) ws[ref].s = { fill: { fgColor: { rgb: "FFFF00" } } };
-        }
-      });
       XLSX.utils.book_append_sheet(wb, ws, cc.slice(0, 31));
     }
     const sumAoa: (string | number)[][] = [["Cost Center", "Hours", "Payment"]];
@@ -166,40 +178,45 @@ export function OncallV2() {
     for (const [cc, rows] of groups) {
       const h = rows.reduce((a, r) => a + r.effectiveHours, 0);
       const p = rows.reduce((a, r) => a + r.payment, 0);
-      sumAoa.push([cc, h, Math.round(p * 100) / 100]);
-      gH += h; gP += p;
+      sumAoa.push([cc, h, p]); gH += h; gP += p;
     }
-    sumAoa.push(["GRAND TOTAL", gH, Math.round(gP * 100) / 100]);
+    sumAoa.push(["GRAND TOTAL", gH, gP]);
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sumAoa), "Summary");
     XLSX.writeFile(wb, "oncall.xlsx");
   };
 
   return (
-    <div className="mx-auto max-w-[1300px] px-4 py-8 sm:py-12">
-      <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
-        <div className="flex flex-col gap-2">
-          <span className="inline-flex w-fit items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-muted-foreground">
-            <Clock className="h-3.5 w-3.5" /> On-call calculator
+    <div className="relative mx-auto max-w-[1400px] px-4 py-10 sm:py-14">
+      {/* Decorative blur orbs */}
+      <div aria-hidden className="pointer-events-none absolute -top-24 left-1/3 h-72 w-72 rounded-full bg-[image:var(--gradient-accent)] opacity-30 blur-[120px]" />
+      <div aria-hidden className="pointer-events-none absolute top-40 right-0 h-64 w-64 rounded-full bg-primary/30 opacity-30 blur-[120px]" />
+
+      <header className="relative mb-8 flex flex-wrap items-end justify-between gap-6">
+        <div className="flex flex-col gap-3">
+          <span className="inline-flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-muted-foreground backdrop-blur">
+            <Sparkles className="h-3.5 w-3.5 text-primary" />
+            On-call payment engine · v2
           </span>
-          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-            On-call hours & payment<span className="text-primary">.</span>
+          <h1 className="font-display text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl">
+            Compute on-call pay,<br />
+            <span className="bg-[image:var(--gradient-hero)] bg-clip-text text-transparent">beautifully precise.</span>
           </h1>
-          <p className="text-sm text-muted-foreground">
-            Mon–Fri = 16h, Sat–Sun = 24h. Pay = salary / 168 × 10% × hours.
+          <p className="max-w-xl text-sm text-muted-foreground">
+            Mon–Fri 16h · weekends 24h · Mon→Mon handover splits 7/9. Pay = salary ÷ 168 × 10% × hours, rounded up.
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={exportXlsx} className="gap-2">
+          <Button variant="outline" onClick={exportXlsx} className="gap-2 border-white/15 bg-white/5 backdrop-blur hover:bg-white/10">
             <Download className="h-4 w-4" /> Export Excel
           </Button>
-          <Button onClick={add} className="gap-2">
+          <Button onClick={add} className="gap-2 bg-[image:var(--gradient-accent)] text-primary-foreground shadow-[var(--shadow-glow)] hover:opacity-90">
             <Plus className="h-4 w-4" /> Add row
           </Button>
         </div>
       </header>
 
       {/* KPI strip */}
-      <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="relative mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat icon={<Users className="h-4 w-4" />} label="People" value={String(peopleCount)} />
         <Stat icon={<Clock className="h-4 w-4" />} label="Total hours" value={`${grand.hours} h`} />
         <Stat icon={<Wallet className="h-4 w-4" />} label="Total payment" value={`€ ${fmtInt(grand.payment)}`} accent />
@@ -207,7 +224,7 @@ export function OncallV2() {
       </div>
 
       {(hasMismatch || hasFlagged) && (
-        <div className="mb-4 space-y-2">
+        <div className="relative mb-4 space-y-2">
           {hasMismatch && (
             <Banner tone="warn">Some hours have been manually overridden and don't match the calculated value.</Banner>
           )}
@@ -215,11 +232,12 @@ export function OncallV2() {
         </div>
       )}
 
-      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-soft)]">
+      <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-card/60 shadow-[var(--shadow-soft)] backdrop-blur-xl">
         <div className="overflow-x-auto">
           <table className="w-full table-fixed border-collapse text-sm">
             <colgroup>
               <col className={COLS.person} />
+              <col className={COLS.mode} />
               <col className={COLS.from} />
               <col className={COLS.to} />
               <col className={COLS.hours} />
@@ -230,17 +248,18 @@ export function OncallV2() {
               <col className={COLS.payment} />
               <col className={COLS.actions} />
             </colgroup>
-            <thead className="bg-muted/40 text-xs uppercase tracking-wider text-muted-foreground">
-              <tr className="border-b border-border">
+            <thead className="bg-white/[0.03] text-[10px] uppercase tracking-[0.12em] text-muted-foreground/80">
+              <tr className="border-b border-white/10">
                 <Th>Person</Th>
+                <Th>Mode</Th>
                 <Th>From</Th>
                 <Th>To</Th>
                 <Th align="right">Hours</Th>
                 <Th>CC</Th>
-                <Th align="right">Salary (€)</Th>
-                <Th align="right">Hour rate</Th>
+                <Th align="right">Salary €</Th>
+                <Th align="right">Rate</Th>
                 <Th align="right">10%</Th>
-                <Th align="right">Payment (€)</Th>
+                <Th align="right">Payment €</Th>
                 <Th />
               </tr>
             </thead>
@@ -260,16 +279,17 @@ export function OncallV2() {
                     setManualHours={setManualHours}
                     resetHours={resetHours}
                     toggleFlag={toggleFlag}
+                    toggleManualMode={toggleManualMode}
                   />
                 );
               })}
-              <tr className="border-t-2 border-border bg-secondary/40 font-semibold">
-                <td className="px-3 py-3 text-xs uppercase tracking-wider text-muted-foreground" colSpan={3}>
+              <tr className="border-t-2 border-white/15 bg-[image:var(--gradient-accent)]/10">
+                <td className="px-4 py-4 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground" colSpan={4}>
                   Grand total
                 </td>
-                <td className="px-3 py-3 text-right font-mono">{grand.hours}</td>
+                <td className="px-3 py-4 text-right font-mono text-base font-semibold">{grand.hours}</td>
                 <td colSpan={4} />
-                <td className="px-3 py-3 text-right font-mono">€ {fmtInt(grand.payment)}</td>
+                <td className="px-3 py-4 text-right font-mono text-base font-semibold text-primary">€ {fmtInt(grand.payment)}</td>
                 <td />
               </tr>
             </tbody>
@@ -282,7 +302,7 @@ export function OncallV2() {
           {results.flatMap((r) =>
             r.errors.map((e, i) => (
               <div key={r.id + i}>
-                {r.person || "Unnamed"} · {r.costCenter || "?"} · {isoToDisplay(r.fromDate)}: {e}
+                {r.person || "Unnamed"} · {r.costCenter || "?"} · {isoToDisplay(r.fromDate) || "—"}: {e}
               </div>
             )),
           )}
@@ -294,7 +314,7 @@ export function OncallV2() {
 
 function Th({ children, align = "left" }: { children?: React.ReactNode; align?: "left" | "right" }) {
   return (
-    <th className={cn("px-3 py-2.5 font-medium", align === "right" ? "text-right" : "text-left")}>
+    <th className={cn("px-3 py-3 font-semibold", align === "right" ? "text-right" : "text-left")}>
       {children}
     </th>
   );
@@ -318,52 +338,60 @@ interface GroupProps {
   setManualHours: (id: string, v: string) => void;
   resetHours: (id: string) => void;
   toggleFlag: (id: string) => void;
+  toggleManualMode: (id: string) => void;
 }
-function RenderGroup({ cc, rows, subH, subP, update, remove, setManualHours, resetHours, toggleFlag }: GroupProps) {
+function RenderGroup({ cc, rows, subH, subP, update, remove, setManualHours, resetHours, toggleFlag, toggleManualMode }: GroupProps) {
   return (
     <>
-      <tr className="bg-muted/30">
-        <td colSpan={10} className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Cost center · {cc} <span className="ml-1 opacity-60">({rows.length})</span>
+      <tr className="bg-white/[0.04]">
+        <td colSpan={11} className="px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+          <span className="mr-2 inline-block h-1.5 w-1.5 rounded-full bg-primary" />
+          {cc} <span className="ml-1 opacity-60">· {rows.length}</span>
         </td>
       </tr>
       {rows.map((r) => (
-        <tr key={r.id} className="border-b border-border/60 hover:bg-muted/20">
+        <tr key={r.id} className="border-b border-white/5 transition-colors hover:bg-white/[0.03]">
           <Td>
             <Input
               value={r.person}
               onChange={(e) => update(r.id, { person: e.target.value })}
               placeholder="Full name"
-              className="h-9 w-full"
+              className="h-9 w-full border-white/10 bg-white/5 placeholder:text-muted-foreground/50 focus-visible:ring-1 focus-visible:ring-primary/60"
             />
           </Td>
           <Td>
-            <DateCell iso={r.fromDate} onChange={(v) => update(r.id, { fromDate: v })} />
+            <ModeToggle manual={r.manualMode} onToggle={() => toggleManualMode(r.id)} />
           </Td>
           <Td>
-            <DateCell iso={r.toDate} onChange={(v) => update(r.id, { toDate: v })} />
+            <DateCell iso={r.fromDate} onChange={(v) => update(r.id, { fromDate: v })} disabled={r.manualMode} />
+          </Td>
+          <Td>
+            <DateCell iso={r.toDate} onChange={(v) => update(r.id, { toDate: v })} disabled={r.manualMode} />
           </Td>
           <Td align="right">
-            <div className="flex items-center justify-end gap-1">
-              <Input
-                type="number"
-                min={0}
-                value={r.effectiveHours}
-                onChange={(e) => setManualHours(r.id, e.target.value)}
-                className={cn(
-                  "h-9 w-full text-right font-mono",
-                  r.hasHoursMismatch && "text-destructive font-semibold border-destructive/40",
-                )}
-                title={r.hasHoursMismatch ? `Calculated: ${r.calculatedHours}h` : undefined}
-              />
-            </div>
+            <Input
+              type="number"
+              min={0}
+              value={r.effectiveHours || ""}
+              onChange={(e) => setManualHours(r.id, e.target.value)}
+              readOnly={!r.manualMode && !r.hasHoursMismatch ? false : false}
+              className={cn(
+                "h-9 w-full border-white/10 bg-white/5 text-right font-mono",
+                r.manualMode && "border-primary/40 bg-primary/10",
+                r.hasHoursMismatch && "border-destructive/50 bg-destructive/10 text-destructive font-semibold",
+              )}
+              title={
+                r.manualMode ? "Manual mode — enter hours directly" :
+                r.hasHoursMismatch ? `Calculated: ${r.calculatedHours}h` : undefined
+              }
+            />
           </Td>
           <Td>
             <Input
               value={r.costCenter}
               onChange={(e) => update(r.id, { costCenter: e.target.value })}
               placeholder="60DOS"
-              className="h-9 w-full font-mono"
+              className="h-9 w-full border-white/10 bg-white/5 font-mono"
             />
           </Td>
           <Td align="right">
@@ -374,27 +402,27 @@ function RenderGroup({ cc, rows, subH, subP, update, remove, setManualHours, res
               onChange={(e) => update(r.id, { monthlyGrossSalary: parseFloat(e.target.value) || 0 })}
               placeholder="2920"
               className={cn(
-                "h-9 w-full text-right font-mono",
-                r.isFlagged && "bg-[hsl(54_100%_62%/0.35)]",
+                "h-9 w-full border-white/10 bg-white/5 text-right font-mono",
+                r.isFlagged && "border-[var(--color-flag)]/60 bg-[var(--color-flag)]/15",
               )}
             />
           </Td>
-          <Td align="right" className="font-mono text-muted-foreground">{fmtMoney(r.hourRate)}</Td>
-          <Td align="right" className="font-mono text-muted-foreground">{fmtMoney(r.tenPercent)}</Td>
+          <Td align="right" className="font-mono text-xs text-muted-foreground">{fmtMoney(r.hourRate)}</Td>
+          <Td align="right" className="font-mono text-xs text-muted-foreground">{fmtMoney(r.tenPercent)}</Td>
           <Td
             align="right"
             className={cn(
-              "font-mono font-medium",
-              r.isFlagged && "bg-[hsl(54_100%_62%/0.35)]",
+              "font-mono font-semibold tabular-nums",
+              r.isFlagged && "rounded-md bg-[var(--color-flag)]/20 text-[var(--color-flag)]",
             )}
           >
-            {fmtInt(r.payment)}
+            € {fmtInt(r.payment)}
           </Td>
           <Td>
             <div className="flex items-center justify-end gap-0.5">
               {r.hasHoursMismatch && (
                 <Button
-                  variant="ghost" size="icon" className="h-8 w-8"
+                  variant="ghost" size="icon" className="h-8 w-8 hover:bg-white/10"
                   onClick={() => resetHours(r.id)}
                   aria-label="Reset hours"
                   title={`Reset to ${r.calculatedHours}h`}
@@ -404,14 +432,14 @@ function RenderGroup({ cc, rows, subH, subP, update, remove, setManualHours, res
               )}
               <Button
                 variant="ghost" size="icon"
-                className={cn("h-8 w-8", r.isFlagged && "text-[hsl(38_92%_50%)]")}
+                className={cn("h-8 w-8 hover:bg-white/10", r.isFlagged && "text-[var(--color-flag)]")}
                 onClick={() => toggleFlag(r.id)}
                 aria-label="Flag for review"
               >
                 <Flag className={cn("h-4 w-4", r.isFlagged && "fill-current")} />
               </Button>
               <Button
-                variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                 onClick={() => remove(r.id)}
                 aria-label="Delete row"
               >
@@ -421,9 +449,9 @@ function RenderGroup({ cc, rows, subH, subP, update, remove, setManualHours, res
           </Td>
         </tr>
       ))}
-      <tr className="border-b border-border bg-muted/10">
-        <td colSpan={3} className="px-3 py-2 text-right text-[11px] uppercase tracking-wider text-muted-foreground">
-          Subtotal {cc}
+      <tr className="border-b border-white/10 bg-white/[0.02]">
+        <td colSpan={4} className="px-4 py-2 text-right text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+          Subtotal
         </td>
         <td className="px-3 py-2 text-right font-mono font-semibold">{subH}</td>
         <td colSpan={4} />
@@ -434,24 +462,43 @@ function RenderGroup({ cc, rows, subH, subP, update, remove, setManualHours, res
   );
 }
 
+function ModeToggle({ manual, onToggle }: { manual?: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className={cn(
+        "group flex h-9 w-full items-center justify-center gap-1.5 rounded-md border text-[11px] font-medium uppercase tracking-wider transition-all",
+        manual
+          ? "border-primary/40 bg-primary/15 text-primary hover:bg-primary/20"
+          : "border-white/10 bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-foreground",
+      )}
+      title={manual ? "Manual hours — click for auto" : "Auto from dates — click for manual"}
+    >
+      {manual ? <PencilLine className="h-3.5 w-3.5" /> : <Calculator className="h-3.5 w-3.5" />}
+      {manual ? "Manual" : "Auto"}
+    </button>
+  );
+}
+
 function Stat({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: string; accent?: boolean }) {
   return (
     <div
       className={cn(
-        "flex items-center gap-3 rounded-xl border px-4 py-3",
+        "relative flex items-center gap-3 overflow-hidden rounded-2xl border px-4 py-4 backdrop-blur-xl",
         accent
-          ? "border-transparent bg-[image:var(--gradient-accent)] text-primary-foreground"
-          : "border-border bg-card",
+          ? "border-white/15 bg-[image:var(--gradient-accent)] text-primary-foreground shadow-[var(--shadow-glow)]"
+          : "border-white/10 bg-card/60",
       )}
     >
-      <div className={cn("rounded-lg p-2", accent ? "bg-white/15" : "bg-secondary text-muted-foreground")}>
+      <div className={cn("rounded-xl p-2.5", accent ? "bg-white/20" : "bg-white/5 text-primary")}>
         {icon}
       </div>
       <div className="leading-tight">
-        <div className={cn("text-[10px] uppercase tracking-wider", accent ? "opacity-80" : "text-muted-foreground")}>
+        <div className={cn("text-[10px] uppercase tracking-[0.14em]", accent ? "opacity-80" : "text-muted-foreground")}>
           {label}
         </div>
-        <div className="font-mono text-lg font-semibold">{value}</div>
+        <div className="font-display text-xl font-semibold">{value}</div>
       </div>
     </div>
   );
@@ -461,10 +508,10 @@ function Banner({ tone, children }: { tone: "warn" | "info"; children: React.Rea
   return (
     <div
       className={cn(
-        "flex items-start gap-2 rounded-lg border px-3 py-2 text-sm",
+        "flex items-start gap-2 rounded-xl border px-4 py-2.5 text-sm backdrop-blur",
         tone === "warn"
-          ? "border-[hsl(38_92%_50%/0.4)] bg-[hsl(38_92%_50%/0.1)] text-[hsl(38_92%_45%)]"
-          : "border-primary/30 bg-primary/5 text-primary",
+          ? "border-[var(--color-warn)]/30 bg-[var(--color-warn)]/10 text-[var(--color-warn)]"
+          : "border-primary/30 bg-primary/10 text-primary",
       )}
     >
       <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
