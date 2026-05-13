@@ -129,28 +129,9 @@ export function OncallV2() {
     setEntries((es) => es.map((e) => (e.id === id ? { ...e, isFlagged: !e.isFlagged } : e)));
 
   const grandHours = results.reduce((a, r) => a + r.effectiveHours, 0);
-  const ccCount = new Set(entries.map((e) => e.costCenter.trim()).filter(Boolean)).size;
+  const grandPayment = results.reduce((a, r) => a + r.payment, 0);
   const hasMismatch = results.some((r) => r.hasHoursMismatch);
   const hasFlagged = results.some((r) => r.isFlagged);
-  const peopleCount = new Set(entries.map((e) => e.person.trim()).filter(Boolean)).size;
-
-  const exportXlsx = () => {
-    const wb = XLSX.utils.book_new();
-    const aoa: (string | number)[][] = [
-      ["Person", "Mode", "From", "To", "Hours", "CC", "Salary", "Hour rate", "10%", "Payment"],
-    ];
-    for (const r of results) {
-      aoa.push([
-        r.person, r.manualMode ? "Manual" : "Auto",
-        isoToDisplay(r.fromDate), isoToDisplay(r.toDate),
-        r.effectiveHours, r.costCenter, r.monthlyGrossSalary,
-        r.hourRate, r.tenPercent, r.payment,
-      ]);
-    }
-    const ws = XLSX.utils.aoa_to_sheet(aoa);
-    XLSX.utils.book_append_sheet(wb, ws, "On-call");
-    XLSX.writeFile(wb, "oncall.xlsx");
-  };
 
   return (
     <div className="relative mx-auto max-w-[1400px] px-4 py-10 sm:py-14">
@@ -160,13 +141,8 @@ export function OncallV2() {
 
       <header className="relative mb-8 flex flex-wrap items-end justify-between gap-6">
         <div className="flex flex-col gap-3">
-          <span className="inline-flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-muted-foreground backdrop-blur">
-            <Sparkles className="h-3.5 w-3.5 text-primary" />
-            On-call payment engine · v2
-          </span>
           <h1 className="font-display text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl">
-            Compute on-call pay,<br />
-            <span className="bg-[image:var(--gradient-hero)] bg-clip-text text-transparent">beautifully precise.</span>
+            <span className="bg-[image:var(--gradient-hero)] bg-clip-text text-transparent">Oncall paycalc</span>
           </h1>
           <p className="max-w-xl text-sm text-muted-foreground">
             Mon–Fri 16h · weekends 24h · Mon→Mon handover splits 7/9. Pay = salary ÷ {monthlyHours} × 10% × hours, rounded up.
@@ -185,9 +161,6 @@ export function OncallV2() {
               className="h-10 w-[170px] border-white/15 bg-white/5 text-right font-mono text-base font-semibold backdrop-blur focus-visible:ring-1 focus-visible:ring-primary/60"
             />
           </label>
-          <Button variant="outline" onClick={exportXlsx} className="h-10 gap-2 border-white/15 bg-white/5 backdrop-blur hover:bg-white/10">
-            <Download className="h-4 w-4" /> Excel
-          </Button>
           <Button variant="outline" onClick={() => exportPaymentDocx(results)} className="h-10 gap-2 border-white/15 bg-white/5 backdrop-blur hover:bg-white/10">
             <FileText className="h-4 w-4" /> Word
           </Button>
@@ -199,10 +172,9 @@ export function OncallV2() {
       </header>
 
       {/* KPI strip */}
-      <div className="relative mb-6 grid grid-cols-3 gap-3">
-        <Stat icon={<Users className="h-4 w-4" />} label="People" value={String(peopleCount)} />
+      <div className="relative mb-6 grid grid-cols-2 gap-3">
         <Stat icon={<Clock className="h-4 w-4" />} label="Total hours" value={`${grandHours} h`} accent />
-        <Stat icon={<Flag className="h-4 w-4" />} label="Cost centers" value={String(ccCount)} />
+        <Stat icon={<Wallet className="h-4 w-4" />} label="Total payment" value={`€ ${fmtInt(grandPayment)}`} />
       </div>
 
       {(hasMismatch || hasFlagged) && (
@@ -223,7 +195,6 @@ export function OncallV2() {
               <col className={COLS.from} />
               <col className={COLS.to} />
               <col className={COLS.hours} />
-              <col className={COLS.cc} />
               <col className={COLS.salary} />
               <col className={COLS.rate} />
               <col className={COLS.ten} />
@@ -237,7 +208,6 @@ export function OncallV2() {
                 <Th>From</Th>
                 <Th>To</Th>
                 <Th align="right">Hours</Th>
-                <Th>CC</Th>
                 <Th align="right">Salary €</Th>
                 <Th align="right">Rate</Th>
                 <Th align="right">10%</Th>
