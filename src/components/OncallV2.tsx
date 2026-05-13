@@ -75,7 +75,7 @@ function DateCell({ iso, onChange, disabled }: { iso: string; onChange: (iso: st
 export function OncallV2() {
   const [entries, setEntries] = useState<OnCallEntry[]>([newEntry()]);
 
-  const [monthlyHours, setMonthlyHours] = useState<number>(168);
+  const [monthlyHours, setMonthlyHours] = useState<number>(0);
   const results = useMemo(() => entries.map((e) => compute(e, monthlyHours)), [entries, monthlyHours]);
 
   const update = (id: string, patch: Partial<OnCallEntry>) =>
@@ -232,17 +232,6 @@ export function OncallV2() {
         </div>
       </div>
 
-      {results.some((r) => r.errors.length > 0) && (
-        <div className="mt-4 space-y-1 text-sm text-destructive">
-          {results.flatMap((r) =>
-            r.errors.map((e, i) => (
-              <div key={r.id + i}>
-                {r.person || "Unnamed"} · {isoToDisplay(r.fromDate) || "—"}: {e}
-              </div>
-            )),
-          )}
-        </div>
-      )}
     </div>
   );
 }
