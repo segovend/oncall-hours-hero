@@ -237,7 +237,7 @@ export function OncallV2() {
           {results.flatMap((r) =>
             r.errors.map((e, i) => (
               <div key={r.id + i}>
-                {r.person || "Unnamed"} · {r.costCenter || "?"} · {isoToDisplay(r.fromDate) || "—"}: {e}
+                {r.person || "Unnamed"} · {isoToDisplay(r.fromDate) || "—"}: {e}
               </div>
             )),
           )}
