@@ -383,7 +383,7 @@ function RenderGroup({ cc, rows, subH, subP, update, remove, setManualHours, res
             <Input
               type="number"
               min={0}
-              value={r.effectiveHours || ""}
+              value={r.effectiveHours}
               onChange={(e) => setManualHours(r.id, e.target.value)}
               readOnly={!r.manualMode && !r.hasHoursMismatch ? false : false}
               className={cn(
